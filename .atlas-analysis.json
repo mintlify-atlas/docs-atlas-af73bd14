@@ -1,0 +1,86 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "ipinfaux",
+  "projectDescription": "Unofficial ipinfo.io scraper with login support for IP geolocation and privacy detection",
+  "theme": "palm",
+  "primaryColor": "#fbd342",
+  "lightColor": "#3b73a4",
+  "darkColor": "#e4e3de",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/authentication",
+              "guides/lookup-ip",
+              "guides/export-data",
+              "guides/batch-processing",
+              "guides/error-handling"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "examples",
+              "faq"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core Classes",
+            "pages": [
+              "api-reference/getfulldata",
+              "api-reference/getjwtbylogin"
+            ]
+          },
+          {
+            "group": "Data Structures",
+            "pages": [
+              "api-reference/data-structures"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "JWT-based authentication with ipinfo.io login",
+    "Comprehensive IP geolocation data extraction",
+    "Privacy detection (VPN, proxy, Tor, hosting)",
+    "Multiple export formats (JSON, CSV)",
+    "Batch processing support for multiple IPs",
+    "Proxy support for requests"
+  ],
+  "publicApiSurface": [
+    "GetJWTByLogin.login(email, password, proxy_url=None)",
+    "GetJWTByLogin(email, password, proxy_url=None)",
+    "GetFullData(ip, jwt_token)",
+    "GetFullData.summary",
+    "GetFullData.geolocation",
+    "GetFullData.privacy",
+    "GetFullData.asn",
+    "GetFullData.abuse",
+    "GetFullData.domains",
+    "GetFullData.tags",
+    "GetFullData.other_providers",
+    "GetFullData.as_json(indent=2)",
+    "GetFullData.as_csv(include_headers=True, delimiter=',')",
+    "GetFullData.save(filename=None)",
+    "GetFullData.save_csv(filename=None, include_headers=True, delimiter=',')"
+  ]
+}
