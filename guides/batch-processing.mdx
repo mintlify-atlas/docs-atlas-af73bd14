@@ -45,10 +45,11 @@ Authenticate once and reuse the JWT token for all lookups to avoid unnecessary a
 
 ## Batch Export to CSV
 
-Use the `save_csv_batch()` method to export multiple IP results to a single CSV file:
+To export multiple IP results to a single CSV file, you can use Python's CSV module to combine the results:
 
 ```python batch_csv.py icon="python" lines
 from ipinfaux import GetJWTByLogin, GetFullData
+import csv
 
 # Authenticate
 jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
@@ -64,13 +65,24 @@ for ip in ips:
 
 # Save all results to one CSV file
 if results:
-    # Use the first result's method to batch export all
-    filename = results[0].save_csv_batch(results, "all_ips.csv")
-    print(f"Saved {len(results)} IPs to {filename}")
+    with open("all_ips.csv", "w", newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        
+        # Write header from first result
+        first_csv = results[0].as_csv(include_headers=True)
+        lines = first_csv.strip().split('\n')
+        writer.writerow(lines[0].split(','))
+        
+        # Write data rows for all results
+        for result in results:
+            csv_data = result.as_csv(include_headers=False)
+            writer.writerow(csv_data.strip().split(','))
+    
+    print(f"Saved {len(results)} IPs to all_ips.csv")
 ```
 
 <Tip>
-The `save_csv_batch()` method is called on the first result object and takes the full list of results as a parameter.
+Use `as_csv()` to get CSV strings from each result, then combine them manually using Python's csv module.
 </Tip>
 
 ## Complete Batch Processing Example
@@ -123,8 +135,16 @@ def process_ip_batch(ip_list, jwt_token, output_file="batch_results.csv"):
     
     # Save results if any succeeded
     if results:
-        filename = results[0].save_csv_batch(results, output_file)
-        print(f"\n✓ Saved {len(results)} results to {filename}")
+        import csv
+        with open(output_file, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            first_csv = results[0].as_csv(include_headers=True)
+            lines = first_csv.strip().split('\n')
+            writer.writerow(lines[0].split(','))
+            for result in results:
+                csv_data = result.as_csv(include_headers=False)
+                writer.writerow(csv_data.strip().split(','))
+        print(f"\n✓ Saved {len(results)} results to {output_file}")
     else:
         print("\n✗ No successful results to save")
     
@@ -186,10 +206,10 @@ for ip in ip_list:
     if not data.error:
         results.append(data)
 
-# Save to CSV
-if results:
-    results[0].save_csv_batch(results, "file_results.csv")
-    print(f"Saved {len(results)} results")
+# Save to CSV - save each individually or combine manually
+for i, result in enumerate(results):
+    result.save_csv(f"ip_{i}.csv")
+print(f"Saved {len(results)} results")
 ```
 
 ## Filtering and Analysis
@@ -234,9 +254,9 @@ us_ips = [
 
 print(f"Found {len(us_ips)} US IPs")
 
-# Save filtered results
-if hosting_ips:
-    hosting_ips[0].save_csv_batch(hosting_ips, "hosting_ips.csv")
+# Save filtered results individually
+for i, result in enumerate(hosting_ips):
+    result.save_csv(f"hosting_ip_{i}.csv")
 ```
 
 ## Best Practices

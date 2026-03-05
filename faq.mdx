@@ -224,9 +224,10 @@ description: Frequently asked questions about ipinfaux
     # Save single IP to CSV
     data.save_csv("output.csv")
     
-    # Batch save multiple IPs
+    # Save multiple IPs individually
     results = [GetFullData(ip, jwt) for ip in ip_list]
-    results[0].save_csv_batch(results, "all_ips.csv")
+    for result in results:
+        result.save_csv(f"ipinfo_{result.ip}.csv")
     ```
 
     **Print to stdout:**
@@ -256,16 +257,16 @@ description: Frequently asked questions about ipinfaux
         if not data.error:
             results.append(data)
 
-    # Save all to single CSV file
-    if results:
-        results[0].save_csv_batch(results, "all_results.csv")
+    # Save each result to individual CSV files
+    for result in results:
+        result.save_csv(f"ipinfo_{result.ip}.csv")
     ```
 
     **Tips for efficient batch processing:**
     - Reuse the same JWT token for all lookups
     - Add small delays between requests to respect rate limits
     - Filter out errors before saving results
-    - Use `save_csv_batch()` instead of individual CSV files
+    - Use individual `save_csv()` calls or Python's csv module for batch exports
 
     ```python
     import time

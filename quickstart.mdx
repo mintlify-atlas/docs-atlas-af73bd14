@@ -205,10 +205,10 @@ for ip in ips:
         results.append(data)
         print(f"{ip}: {data.geolocation.get('city')}")
 
-# Export all results to a single CSV file
-if results:
-    results[0].save_csv_batch(results, "all_ips.csv")
-    print(f"\nExported {len(results)} results to all_ips.csv")
+# Save each result individually
+for result in results:
+    result.save_csv(f"ipinfo_{result.ip}.csv")
+print(f"\nExported {len(results)} results to CSV files")
 ```
 
 ## Understanding the Data Structure
