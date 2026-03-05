@@ -1,0 +1,97 @@
+---
+title: Introduction
+description: Unofficial ipinfo.io scraper with login support for Python
+---
+
+## What is ipinfaux?
+
+ipinfaux is an unofficial Python library for scraping IP address information from ipinfo.io. It provides comprehensive IP geolocation, ASN details, privacy detection, and more through an authenticated scraping approach using JWT tokens.
+
+Unlike API-based solutions, ipinfaux uses web scraping with BeautifulSoup to extract detailed IP information, making it ideal for projects that need rich IP data without API rate limits.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Authentication Support" icon="lock">
+    Login with email/password to obtain JWT tokens for authenticated requests
+  </Card>
+  <Card title="Comprehensive Data" icon="database">
+    Extract 8+ data categories including geolocation, ASN, privacy detection, domains, and tags
+  </Card>
+  <Card title="Multiple Export Formats" icon="file-export">
+    Export data as JSON or CSV with flexible formatting options
+  </Card>
+  <Card title="Proxy Support" icon="shield">
+    Route requests through HTTP/HTTPS proxies for enhanced privacy
+  </Card>
+</CardGroup>
+
+## What Data Can You Extract?
+
+ipinfaux scrapes the following information for any IP address:
+
+- **Summary** - ASN, hostname, company, IP range, RPKI validation
+- **Geolocation** - City, state, country, postal code, timezone, coordinates
+- **Privacy Detection** - VPN, proxy, Tor, hosting, relay detection
+- **ASN Details** - Autonomous system number, name, domain, type
+- **Abuse Contact** - Address, phone, email, network information
+- **Hosted Domains** - List of domains hosted on the IP
+- **Tags** - IP characteristics (CDN, hosting, anycast, etc.)
+- **Alternative Data** - Cross-provider location validation
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Security Research">
+    Identify VPNs, proxies, and Tor exit nodes. Detect hosting providers and analyze IP reputation for threat intelligence.
+  </Accordion>
+  <Accordion title="Fraud Prevention">
+    Validate user locations, detect suspicious IP patterns, and identify high-risk hosting providers in financial applications.
+  </Accordion>
+  <Accordion title="Network Analysis">
+    Research ASN relationships, analyze anycast networks, and map internet infrastructure for academic or commercial purposes.
+  </Accordion>
+  <Accordion title="Batch Processing">
+    Process large lists of IP addresses to CSV for analysis, reporting, or integration with other security tools.
+  </Accordion>
+</AccordionGroup>
+
+## System Requirements
+
+<Note>
+  **Python 3.7+** is required to use ipinfaux.
+</Note>
+
+The library depends on:
+- `requests` >= 2.28.0 - HTTP client for web scraping
+- `beautifulsoup4` >= 4.12.0 - HTML parsing engine
+
+## Quick Example
+
+Here's a minimal example to get you started:
+
+```python
+from ipinfaux import GetJWTByLogin, GetFullData
+
+# Authenticate and get JWT token
+jwt = GetJWTByLogin.login("your@email.com", "password")
+
+# Lookup an IP address
+data = GetFullData("8.8.8.8", jwt)
+
+if not data.error:
+    print(f"Location: {data.geolocation.get('city')}, {data.geolocation.get('country')}")
+    print(f"Company: {data.summary.get('company')}")
+    print(f"Hosting: {data.privacy.get('hosting')}")
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install ipinfaux using pip and verify your setup
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get up and running with a complete working example
+  </Card>
+</CardGroup>

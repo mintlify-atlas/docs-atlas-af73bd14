@@ -1,0 +1,201 @@
+---
+title: "Looking Up IP Addresses"
+description: "Learn how to look up IP address information using ipinfaux"
+---
+
+## Overview
+
+The `GetFullData` class is the main interface for looking up IP address information. It fetches comprehensive data from ipinfo.io including geolocation, privacy detection, ASN details, and more.
+
+## Basic IP Lookup
+
+Once you have a JWT token, you can look up any IP address:
+
+```python basic_lookup.py icon="python" lines
+from ipinfaux import GetJWTByLogin, GetFullData
+
+# Authenticate
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+# Look up an IP address
+data = GetFullData("8.8.8.8", jwt)
+
+# Check for errors
+if data.error:
+    print(f"Lookup failed: {data.error}")
+else:
+    print(f"IP: {data.ip}")
+    print(f"Location: {data.geolocation.get('city')}, {data.geolocation.get('country')}")
+```
+
+## Accessing Data Properties
+
+The `GetFullData` class provides several properties to access different categories of data:
+
+### Summary Information
+
+```python summary.py icon="python" lines
+data = GetFullData("8.8.8.8", jwt)
+
+print(f"ASN: {data.summary.get('asn')}")
+print(f"Company: {data.summary.get('company')}")
+print(f"Hostname: {data.summary.get('hostname')}")
+print(f"ASN Type: {data.summary.get('asn_type')}")
+```
+
+### Geolocation Data
+
+```python geolocation.py icon="python" lines
+data = GetFullData("8.8.8.8", jwt)
+
+print(f"City: {data.geolocation.get('city')}")
+print(f"State: {data.geolocation.get('state')}")
+print(f"Country: {data.geolocation.get('country')}")
+print(f"Coordinates: {data.geolocation.get('latitude')}, {data.geolocation.get('longitude')}")
+print(f"Timezone: {data.geolocation.get('timezone')}")
+```
+
+### Privacy Detection
+
+Detect if an IP is a VPN, proxy, Tor exit node, or hosting service:
+
+```python privacy.py icon="python" lines
+data = GetFullData("8.8.8.8", jwt)
+
+print(f"VPN: {data.privacy.get('vpn')}")
+print(f"Proxy: {data.privacy.get('proxy')}")
+print(f"Tor: {data.privacy.get('tor')}")
+print(f"Hosting: {data.privacy.get('hosting')}")
+print(f"Relay: {data.privacy.get('relay')}")
+```
+
+### ASN Information
+
+```python asn.py icon="python" lines
+data = GetFullData("8.8.8.8", jwt)
+
+print(f"ASN: {data.asn.get('asn')}")
+print(f"ASN Name: {data.asn.get('asn_name')}")
+print(f"Domain: {data.asn.get('domain')}")
+print(f"ASN Type: {data.asn.get('asn_type')}")
+```
+
+### Abuse Contact Information
+
+```python abuse.py icon="python" lines
+data = GetFullData("8.8.8.8", jwt)
+
+print(f"Abuse Email: {data.abuse.get('email')}")
+print(f"Abuse Phone: {data.abuse.get('phone')}")
+print(f"Network: {data.abuse.get('network')}")
+```
+
+### Hosted Domains
+
+```python domains.py icon="python" lines
+data = GetFullData("8.8.8.8", jwt)
+
+print(f"Domain Count: {data.domains.get('count')}")
+print(f"Domains: {data.domains.get('domains')}")
+```
+
+### Tags
+
+Check various characteristics of the IP:
+
+```python tags.py icon="python" lines
+data = GetFullData("8.8.8.8", jwt)
+
+print(f"CDN: {data.tags.get('cdn')}")
+print(f"Anycast: {data.tags.get('anycast')}")
+print(f"Hosting: {data.tags.get('hosting')}")
+print(f"Webserver: {data.tags.get('webserver')}")
+```
+
+## Complete Example
+
+Here's a complete example that looks up multiple IP addresses and displays key information:
+
+```python complete_example.py icon="python" lines
+from ipinfaux import GetJWTByLogin, GetFullData
+
+# Authenticate
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+if not jwt:
+    print("Authentication failed")
+    exit(1)
+
+# List of IPs to look up
+ip_addresses = ["8.8.8.8", "1.1.1.1", "9.9.9.9"]
+
+for ip in ip_addresses:
+    print(f"\nLooking up {ip}...")
+    data = GetFullData(ip, jwt)
+    
+    if data.error:
+        print(f"  Error: {data.error}")
+        continue
+    
+    # Display key information
+    print(f"  Location: {data.geolocation.get('city')}, {data.geolocation.get('country')}")
+    print(f"  Company: {data.summary.get('company')}")
+    print(f"  Hosting: {data.privacy.get('hosting')}")
+    print(f"  VPN: {data.privacy.get('vpn')}")
+    print(f"  ASN: {data.summary.get('asn')} - {data.summary.get('asn_name')}")
+```
+
+## Error Handling
+
+Always check the `error` property before accessing data:
+
+```python error_check.py icon="python" lines
+data = GetFullData("invalid-ip", jwt)
+
+if data.error:
+    print(f"Lookup failed: {data.error}")
+    # Handle the error appropriately
+else:
+    # Process the data
+    print(data.summary)
+```
+
+<Note>
+Common errors include:
+- Invalid or expired JWT token
+- Network connection issues
+- Invalid IP address format
+- Parsing errors from ipinfo.io response
+</Note>
+
+## Raw Data Access
+
+You can access all data as a dictionary:
+
+```python raw_data.py icon="python" lines
+data = GetFullData("8.8.8.8", jwt)
+
+# Get all data as a dictionary
+all_data = data.raw_data
+
+print(all_data['ip'])
+print(all_data['summary'])
+print(all_data['geolocation'])
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Export Data" icon="download" href="/guides/export-data">
+    Learn how to export IP data to JSON and CSV formats
+  </Card>
+  <Card title="Batch Processing" icon="layer-group" href="/guides/batch-processing">
+    Process multiple IP addresses efficiently
+  </Card>
+  <Card title="GetFullData API" icon="code" href="/api-reference/getfulldata">
+    View the complete API reference
+  </Card>
+  <Card title="Data Structures" icon="database" href="/api-reference/data-structures">
+    Explore all available data fields
+  </Card>
+</CardGroup>

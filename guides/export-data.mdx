@@ -1,0 +1,240 @@
+---
+title: "Exporting Data"
+description: "Learn how to export IP data to JSON and CSV formats"
+---
+
+## Overview
+
+ipinfaux provides flexible export options to save IP data in JSON or CSV formats. You can export data to files or get formatted strings for further processing.
+
+## JSON Export
+
+### Get JSON String
+
+Convert IP data to a JSON string:
+
+```python json_string.py icon="python" lines
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+# Get JSON string with default indentation (2 spaces)
+json_output = data.as_json()
+print(json_output)
+
+# Get JSON with custom indentation
+json_compact = data.as_json(indent=None)
+json_pretty = data.as_json(indent=4)
+```
+
+### Save to JSON File
+
+Save IP data directly to a JSON file:
+
+```python save_json.py icon="python" lines
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+# Save with auto-generated filename: ipinfo_8.8.8.8.json
+filename = data.save()
+print(f"Saved to {filename}")
+
+# Save with custom filename
+data.save("google_dns.json")
+```
+
+<Note>
+When no filename is provided, the default format is `ipinfo_{ip_address}.json`.
+</Note>
+
+## CSV Export
+
+### Get CSV String
+
+Convert IP data to CSV format:
+
+```python csv_string.py icon="python" lines
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+# Get CSV string with headers
+csv_output = data.as_csv()
+print(csv_output)
+
+# Get CSV without headers
+csv_no_headers = data.as_csv(include_headers=False)
+
+# Use custom delimiter
+csv_semicolon = data.as_csv(delimiter=";")
+```
+
+### Save to CSV File
+
+Save IP data to a CSV file:
+
+```python save_csv.py icon="python" lines
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+# Save with auto-generated filename: ipinfo_8.8.8.8.csv
+filename = data.save_csv()
+print(f"Saved to {filename}")
+
+# Save with custom filename and delimiter
+data.save_csv("results.csv", delimiter=",")
+
+# Save without headers
+data.save_csv("data_only.csv", include_headers=False)
+```
+
+## Export Methods Reference
+
+### `as_json(indent=2)`
+
+Returns IP data as a JSON string.
+
+<ParamField path="indent" type="int" default="2">
+  Number of spaces for indentation. Use `None` for compact output.
+</ParamField>
+
+**Returns:** `str` - Formatted JSON string
+
+### `save(filename=None)`
+
+Saves IP data to a JSON file.
+
+<ParamField path="filename" type="string" default="None">
+  Output filename. If not provided, uses `ipinfo_{ip}.json`.
+</ParamField>
+
+**Returns:** `str` - Filename on success, `None` on error
+
+### `as_csv(include_headers=True, delimiter=',')`
+
+Returns IP data as a CSV string.
+
+<ParamField path="include_headers" type="boolean" default="True">
+  Whether to include column headers in the output
+</ParamField>
+
+<ParamField path="delimiter" type="string" default=",">
+  Field delimiter character (comma, semicolon, tab, etc.)
+</ParamField>
+
+**Returns:** `str` - Formatted CSV string
+
+### `save_csv(filename=None, include_headers=True, delimiter=',')`
+
+Saves IP data to a CSV file.
+
+<ParamField path="filename" type="string" default="None">
+  Output filename. If not provided, uses `ipinfo_{ip}.csv`.
+</ParamField>
+
+<ParamField path="include_headers" type="boolean" default="True">
+  Whether to include column headers in the file
+</ParamField>
+
+<ParamField path="delimiter" type="string" default=",">
+  Field delimiter character
+</ParamField>
+
+**Returns:** `str` - Filename on success, `None` on error
+
+## Flattened Data Structure
+
+CSV export automatically flattens nested dictionaries using dot notation:
+
+```python flatten_example.py icon="python" lines
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+csv = data.as_csv()
+
+# CSV headers will include:
+# ip, summary.asn, summary.company, geolocation.city, geolocation.state, ...
+```
+
+Nested objects are converted to keys like:
+- `summary.asn`
+- `geolocation.city`
+- `privacy.vpn`
+- `asn.asn_name`
+
+Arrays are converted to JSON strings in the CSV.
+
+## Complete Export Example
+
+```python complete_export.py icon="python" lines
+from ipinfaux import GetJWTByLogin, GetFullData
+import json
+
+# Authenticate
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+# Look up IP
+data = GetFullData("8.8.8.8", jwt)
+
+if data.error:
+    print(f"Error: {data.error}")
+    exit(1)
+
+# Export to JSON
+print("Exporting to JSON...")
+json_file = data.save("google_dns.json")
+print(f"Saved to {json_file}")
+
+# Export to CSV
+print("Exporting to CSV...")
+csv_file = data.save_csv("google_dns.csv")
+print(f"Saved to {csv_file}")
+
+# Get JSON string for processing
+json_string = data.as_json()
+parsed = json.loads(json_string)
+print(f"\nCompany: {parsed['summary']['company']}")
+
+# Get CSV string
+csv_string = data.as_csv(delimiter=";")
+print("\nFirst 200 chars of CSV:")
+print(csv_string[:200])
+```
+
+## Error Handling
+
+Export methods may fail due to file system errors:
+
+```python export_error_handling.py icon="python" lines
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+# Try to save
+filename = data.save("/invalid/path/file.json")
+
+if filename is None:
+    print(f"Save failed: {data.error}")
+else:
+    print(f"Saved successfully to {filename}")
+```
+
+<Warning>
+Always check the return value of `save()` and `save_csv()` methods. They return `None` on failure and set the `error` property.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Batch Processing" icon="layer-group" href="/guides/batch-processing">
+    Learn how to export multiple IPs to a single CSV file
+  </Card>
+  <Card title="Data Structures" icon="database" href="/api-reference/data-structures">
+    Explore the complete data structure
+  </Card>
+  <Card title="Examples" icon="book" href="/examples">
+    View more export examples
+  </Card>
+</CardGroup>

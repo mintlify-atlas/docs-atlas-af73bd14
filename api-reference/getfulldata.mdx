@@ -1,0 +1,371 @@
+---
+title: "GetFullData"
+description: "Main class for fetching comprehensive IP information from ipinfo.io"
+---
+
+## Overview
+
+The `GetFullData` class fetches and parses comprehensive IP information from ipinfo.io, including geolocation, privacy detection, ASN details, abuse contacts, hosted domains, and more.
+
+## Constructor
+
+```python
+GetFullData(ip, jwt_token)
+```
+
+Initializes and automatically fetches data for the given IP address.
+
+<ParamField path="ip" type="str" required>
+  The IP address to lookup (e.g., "8.8.8.8")
+</ParamField>
+
+<ParamField path="jwt_token" type="str" required>
+  JWT token for authentication. Obtain this using the [GetJWTByLogin](/api-reference/getjwtbylogin) class.
+</ParamField>
+
+### Example
+
+```python
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", "your-jwt-token")
+
+if data.error:
+    print(f"Error: {data.error}")
+else:
+    print(data.summary)
+    print(data.geolocation)
+```
+
+## Properties
+
+All properties are automatically populated during initialization.
+
+### summary
+
+**Type:** `dict`
+
+Basic IP information including ASN, hostname, company, and privacy status.
+
+```python
+print(data.summary)
+# {
+#   "asn": "AS15169",
+#   "rpki": true,
+#   "asn_name": "Google LLC",
+#   "hostname": "dns.google",
+#   "range": "8.8.8.0/24",
+#   "company": "Google LLC",
+#   ...
+# }
+```
+
+See [Data Structures](/api-reference/data-structures#summary) for complete field list.
+
+### geolocation
+
+**Type:** `dict`
+
+Geographic location data including city, state, country, coordinates, and timezone.
+
+```python
+print(data.geolocation)
+# {
+#   "city": "Mountain View",
+#   "state": "California",
+#   "country": "United States",
+#   "latitude": 37.4056,
+#   "longitude": -122.0775,
+#   ...
+# }
+```
+
+See [Data Structures](/api-reference/data-structures#geolocation) for complete field list.
+
+### privacy
+
+**Type:** `dict`
+
+Privacy detection results indicating if the IP is associated with VPN, proxy, Tor, hosting, or relay services.
+
+```python
+print(data.privacy)
+# {
+#   "hosting": true,
+#   "vpn": false,
+#   "proxy": false,
+#   "tor": false,
+#   "relay": false,
+#   "residential_proxy": false,
+#   "details": {}
+# }
+```
+
+See [Data Structures](/api-reference/data-structures#privacy) for complete field list.
+
+### asn
+
+**Type:** `dict`
+
+Autonomous System Number details including ASN, domain, and type.
+
+```python
+print(data.asn)
+# {
+#   "asn": "15169",
+#   "asn_name": "Google LLC",
+#   "domain": "google.com",
+#   "asn_type": "hosting",
+#   "route": "8.8.8.0/24"
+# }
+```
+
+See [Data Structures](/api-reference/data-structures#asn) for complete field list.
+
+### abuse
+
+**Type:** `dict`
+
+Abuse contact information including email, phone, and address.
+
+```python
+print(data.abuse)
+# {
+#   "address": "Mountain View, 1600 Amphitheatre Parkway, 94043",
+#   "phone": "+1-650-253-0000",
+#   "email": "network-abuse@google.com",
+#   "name": "Abuse",
+#   "network": "8.8.8.0/24"
+# }
+```
+
+See [Data Structures](/api-reference/data-structures#abuse) for complete field list.
+
+### domains
+
+**Type:** `dict`
+
+Domains hosted on this IP address.
+
+```python
+print(data.domains)
+# {
+#   "count": 15,
+#   "domains": ["hdchina.org", "55188.com", ...]
+# }
+```
+
+See [Data Structures](/api-reference/data-structures#domains) for complete field list.
+
+### tags
+
+**Type:** `dict`
+
+Boolean flags indicating IP characteristics (anycast, cdn, hosting, vpn, etc.).
+
+```python
+print(data.tags)
+# {
+#   "anycast": true,
+#   "cdn": true,
+#   "hosting": true,
+#   "vpn": false,
+#   "webserver": true,
+#   ...
+# }
+```
+
+See [Data Structures](/api-reference/data-structures#tags) for complete field list.
+
+### other_providers
+
+**Type:** `dict`
+
+Comparison data from other geolocation providers (appears when ipinfo.io detects discrepancies).
+
+```python
+print(data.other_providers)
+# {
+#   "exists": false,
+#   "city": null,
+#   "state": null,
+#   "country_code": null,
+#   "distance_km": null,
+#   "distance_text": null,
+#   "full_text": null
+# }
+```
+
+See [Data Structures](/api-reference/data-structures#other-providers) for complete field list.
+
+### error
+
+**Type:** `str | None`
+
+Error message if the request or parsing failed, otherwise `None`.
+
+```python
+if data.error:
+    print(f"Failed: {data.error}")
+```
+
+### raw_data
+
+**Type:** `dict`
+
+Complete raw data dictionary containing the IP address and all parsed sections.
+
+```python
+print(data.raw_data)
+# {
+#   "ip": "8.8.8.8",
+#   "summary": {...},
+#   "geolocation": {...},
+#   "privacy": {...},
+#   "asn": {...},
+#   "abuse": {...},
+#   "domains": {...},
+#   "tags": {...},
+#   "other_providers": {...}
+# }
+```
+
+## Methods
+
+### as_dict()
+
+Returns the complete data as a Python dictionary.
+
+**Returns:** `dict` - All IP data
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+data_dict = data.as_dict()
+print(data_dict["ip"])
+print(data_dict["summary"]["company"])
+```
+
+### as_json(indent=2)
+
+Returns the data as a formatted JSON string.
+
+<ParamField path="indent" type="int" default="2">
+  Number of spaces for JSON indentation
+</ParamField>
+
+**Returns:** `str` - JSON-formatted string
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+json_string = data.as_json(indent=4)
+print(json_string)
+```
+
+### save(filename=None)
+
+Saves the data to a JSON file.
+
+<ParamField path="filename" type="str" default="None">
+  Output filename. If not provided, defaults to `ipinfo_{ip}.json`
+</ParamField>
+
+**Returns:** `str | None` - Filename if successful, `None` if failed
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+# Save with auto-generated filename
+data.save()  # Creates ipinfo_8.8.8.8.json
+
+# Save with custom filename
+data.save("custom.json")
+```
+
+### as_csv(include_headers=True, delimiter=',')
+
+Returns the data as a CSV string with flattened keys.
+
+<ParamField path="include_headers" type="bool" default="True">
+  Whether to include column headers in the CSV output
+</ParamField>
+
+<ParamField path="delimiter" type="str" default="','">
+  Character to use as field delimiter (e.g., ',', ';', '\t')
+</ParamField>
+
+**Returns:** `str` - CSV-formatted string
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+csv_string = data.as_csv()
+print(csv_string)
+
+# Without headers
+csv_string = data.as_csv(include_headers=False)
+
+# Tab-delimited
+csv_string = data.as_csv(delimiter='\t')
+```
+
+<Note>
+  Nested dictionaries are flattened using dot notation (e.g., `summary.asn`, `geolocation.city`). Lists are converted to JSON strings.
+</Note>
+
+### save_csv(filename=None, include_headers=True, delimiter=',')
+
+Saves the data to a CSV file.
+
+<ParamField path="filename" type="str" default="None">
+  Output filename. If not provided, defaults to `ipinfo_{ip}.csv`
+</ParamField>
+
+<ParamField path="include_headers" type="bool" default="True">
+  Whether to include column headers in the CSV file
+</ParamField>
+
+<ParamField path="delimiter" type="str" default="','">
+  Character to use as field delimiter
+</ParamField>
+
+**Returns:** `str | None` - Filename if successful, `None` if failed
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+# Save with auto-generated filename
+data.save_csv()  # Creates ipinfo_8.8.8.8.csv
+
+# Save with custom filename and delimiter
+data.save_csv("data.csv", delimiter=";")
+```
+
+## Complete Example
+
+```python
+from ipinfaux import GetFullData, GetJWTByLogin
+
+# Get JWT token
+jwt = GetJWTByLogin.login("your@email.com", "password")
+
+if jwt:
+    # Lookup multiple IPs
+    ips = ["8.8.8.8", "1.1.1.1", "9.9.9.9"]
+    
+    for ip in ips:
+        data = GetFullData(ip, jwt)
+        
+        if data.error:
+            print(f"{ip}: Error - {data.error}")
+        else:
+            print(f"{ip}: {data.geolocation.get('city')}, {data.summary.get('company')}")
+            
+            # Save individual files
+            data.save()
+            data.save_csv()
+            
+            # Access specific data
+            if data.privacy["vpn"]:
+                print(f"  VPN detected: {data.privacy['details']}")
+            
+            print(f"  Hosted domains: {data.domains['count']}")
+```

@@ -1,0 +1,352 @@
+---
+title: "Error Handling"
+description: "Learn how to handle errors and edge cases in ipinfaux"
+---
+
+## Overview
+
+ipinfaux provides a simple error handling mechanism through the `.error` property. All errors are captured and stored, allowing you to check if an operation succeeded before processing the results.
+
+## The Error Property
+
+Both `GetFullData` and `GetJWTByLogin` classes provide an `.error` property:
+
+```python error_property.py icon="python" lines
+from ipinfaux import GetFullData, GetJWTByLogin
+
+# Authentication error
+auth = GetJWTByLogin("invalid@email.com", "wrongpassword")
+if auth.error:
+    print(f"Auth error: {auth.error}")
+
+# Lookup error
+data = GetFullData("invalid-ip", "invalid-token")
+if data.error:
+    print(f"Lookup error: {data.error}")
+```
+
+## Checking for Errors
+
+Always check the error property before accessing data:
+
+```python error_check.py icon="python" lines
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+if data.error:
+    print(f"Error: {data.error}")
+    # Handle error appropriately
+    exit(1)
+else:
+    # Safe to access data
+    print(f"City: {data.geolocation.get('city')}")
+```
+
+<Note>
+The `error` property is `None` if the operation succeeded, or a string describing the error if it failed.
+</Note>
+
+## Common Error Types
+
+### Authentication Errors
+
+Authentication can fail for several reasons:
+
+```python auth_errors.py icon="python" lines
+from ipinfaux import GetJWTByLogin
+
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+if jwt is None:
+    print("Authentication failed - possible reasons:")
+    print("  - Invalid email or password")
+    print("  - Network connection issue")
+    print("  - ipinfo.io service unavailable")
+    print("  - Proxy configuration error (if using proxy)")
+    exit(1)
+```
+
+### Network Errors
+
+Network issues result in "request failed" errors:
+
+```python network_errors.py icon="python" lines
+from ipinfaux import GetFullData
+import requests
+
+try:
+    data = GetFullData("8.8.8.8", jwt)
+    
+    if data.error and "request failed" in data.error.lower():
+        print("Network error occurred:")
+        print(f"  {data.error}")
+        print("Possible causes:")
+        print("  - No internet connection")
+        print("  - ipinfo.io is down")
+        print("  - Firewall blocking requests")
+        print("  - Timeout (request took >10 seconds)")
+except Exception as e:
+    print(f"Unexpected error: {e}")
+```
+
+### Parsing Errors
+
+If the HTML from ipinfo.io changes or is malformed:
+
+```python parse_errors.py icon="python" lines
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+if data.error and "parsing failed" in data.error.lower():
+    print("Parse error occurred:")
+    print(f"  {data.error}")
+    print("This could mean:")
+    print("  - ipinfo.io changed their HTML structure")
+    print("  - Invalid or expired JWT token")
+    print("  - IP returned unexpected response")
+```
+
+### Invalid JWT Token
+
+Expired or invalid JWT tokens may result in authentication page redirects:
+
+```python invalid_token.py icon="python" lines
+from ipinfaux import GetFullData, GetJWTByLogin
+
+# Old or invalid token
+old_jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+data = GetFullData("8.8.8.8", old_jwt)
+
+if data.error or not data.summary:
+    print("Token may be invalid or expired")
+    print("Attempting to get fresh token...")
+    
+    # Re-authenticate
+    new_jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+    
+    if new_jwt:
+        # Retry with new token
+        data = GetFullData("8.8.8.8", new_jwt)
+        if not data.error:
+            print("Success with new token!")
+```
+
+## Error Handling Patterns
+
+### Pattern 1: Simple Check and Exit
+
+```python pattern_1.py icon="python" lines
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+if data.error:
+    print(f"Error: {data.error}")
+    exit(1)
+
+# Continue with data
+print(data.geolocation)
+```
+
+### Pattern 2: Fallback Value
+
+```python pattern_2.py icon="python" lines
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+if data.error:
+    city = "Unknown"
+    country = "Unknown"
+else:
+    city = data.geolocation.get('city', 'Unknown')
+    country = data.geolocation.get('country', 'Unknown')
+
+print(f"Location: {city}, {country}")
+```
+
+### Pattern 3: Retry Logic
+
+```python pattern_3.py icon="python" lines
+from ipinfaux import GetFullData
+import time
+
+def lookup_with_retry(ip, jwt, max_retries=3):
+    """
+    Lookup IP with automatic retries on failure.
+    """
+    for attempt in range(max_retries):
+        data = GetFullData(ip, jwt)
+        
+        if not data.error:
+            return data
+        
+        print(f"Attempt {attempt + 1} failed: {data.error}")
+        
+        if attempt < max_retries - 1:
+            wait_time = 2 ** attempt  # Exponential backoff
+            print(f"Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+    
+    print(f"Failed after {max_retries} attempts")
+    return None
+
+# Usage
+result = lookup_with_retry("8.8.8.8", jwt)
+if result:
+    print(f"Success: {result.geolocation}")
+```
+
+### Pattern 4: Collect Errors for Batch Processing
+
+```python pattern_4.py icon="python" lines
+from ipinfaux import GetFullData
+
+ips = ["8.8.8.8", "1.1.1.1", "invalid-ip", "9.9.9.9"]
+results = []
+errors = []
+
+for ip in ips:
+    data = GetFullData(ip, jwt)
+    
+    if data.error:
+        errors.append((ip, data.error))
+    else:
+        results.append(data)
+
+print(f"Successful: {len(results)}")
+print(f"Failed: {len(errors)}")
+
+if errors:
+    print("\nErrors:")
+    for ip, error in errors:
+        print(f"  {ip}: {error}")
+```
+
+## File Save Errors
+
+File save operations may fail due to permissions or invalid paths:
+
+```python file_errors.py icon="python" lines
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+if data.error:
+    print(f"Lookup failed: {data.error}")
+    exit(1)
+
+# Try to save
+filename = data.save("/invalid/path/file.json")
+
+if filename is None:
+    print(f"Save failed: {data.error}")
+    print("Possible causes:")
+    print("  - Invalid file path")
+    print("  - No write permissions")
+    print("  - Disk full")
+    print("  - Directory doesn't exist")
+else:
+    print(f"Saved to {filename}")
+```
+
+<Warning>
+The `save()` and `save_csv()` methods return `None` on failure and update the `.error` property with the error message.
+</Warning>
+
+## Defensive Programming
+
+Use `.get()` with default values when accessing dictionary data:
+
+```python defensive.py icon="python" lines
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+if not data.error:
+    # Safe access with defaults
+    city = data.geolocation.get('city', 'Unknown')
+    company = data.summary.get('company', 'Unknown')
+    is_vpn = data.privacy.get('vpn', False)
+    asn = data.summary.get('asn', 'N/A')
+    
+    print(f"Location: {city}")
+    print(f"Company: {company}")
+    print(f"VPN: {is_vpn}")
+    print(f"ASN: {asn}")
+```
+
+## Exception Handling
+
+While ipinfaux catches most errors internally, you should still wrap critical sections in try-except:
+
+```python exceptions.py icon="python" lines
+from ipinfaux import GetJWTByLogin, GetFullData
+
+try:
+    # Authenticate
+    jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+    
+    if not jwt:
+        raise ValueError("Authentication failed")
+    
+    # Lookup IP
+    data = GetFullData("8.8.8.8", jwt)
+    
+    if data.error:
+        raise RuntimeError(f"Lookup failed: {data.error}")
+    
+    # Save data
+    filename = data.save("output.json")
+    
+    if filename is None:
+        raise IOError(f"Save failed: {data.error}")
+    
+    print(f"Success: {filename}")
+    
+except ValueError as e:
+    print(f"Authentication error: {e}")
+except RuntimeError as e:
+    print(f"Lookup error: {e}")
+except IOError as e:
+    print(f"File error: {e}")
+except Exception as e:
+    print(f"Unexpected error: {e}")
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always Check .error Property">
+    Never assume an operation succeeded. Always check the `.error` property before accessing data.
+  </Accordion>
+  
+  <Accordion title="Use .get() for Dictionary Access">
+    When accessing dictionary properties like `data.geolocation.get('city')`, use `.get()` with a default value to avoid KeyError.
+  </Accordion>
+  
+  <Accordion title="Implement Retry Logic">
+    For production code, implement retry logic for network errors. Use exponential backoff to avoid overwhelming the server.
+  </Accordion>
+  
+  <Accordion title="Log Errors">
+    Log errors to a file or monitoring service for debugging and analysis, especially in batch processing.
+  </Accordion>
+  
+  <Accordion title="Validate Input">
+    Validate IP addresses before lookup to catch obvious errors early.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Examples" icon="book" href="/examples">
+    View complete examples with error handling
+  </Card>
+  <Card title="FAQ" icon="question" href="/faq">
+    Common questions about errors and troubleshooting
+  </Card>
+</CardGroup>

@@ -1,0 +1,161 @@
+---
+title: "Authentication"
+description: "Learn how to authenticate with ipinfo.io using JWT tokens"
+---
+
+## Overview
+
+ipinfaux uses JWT-based authentication to access ipinfo.io data. You need valid ipinfo.io credentials to obtain a JWT token that authenticates your requests.
+
+## Getting a JWT Token
+
+Use the `GetJWTByLogin` class to authenticate and obtain a JWT token.
+
+### Basic Authentication
+
+```python authentication.py icon="python" lines
+from ipinfaux import GetJWTByLogin
+
+# Login with email and password
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+if jwt:
+    print(f"Successfully authenticated: {jwt}")
+else:
+    print("Authentication failed")
+```
+
+### Using the Class Constructor
+
+You can also use the class constructor for authentication:
+
+```python class_method.py icon="python" lines
+from ipinfaux import GetJWTByLogin
+
+# Initialize with credentials
+auth = GetJWTByLogin("your@email.com", "yourpassword")
+
+if auth.token:
+    print(f"Token: {auth.token}")
+else:
+    print(f"Error: {auth.error}")
+```
+
+## Authentication with Proxy
+
+If you need to use a proxy for authentication, pass the proxy URL as the third parameter:
+
+```python proxy_auth.py icon="python" lines
+from ipinfaux import GetJWTByLogin
+
+# Login with proxy
+jwt = GetJWTByLogin.login(
+    "your@email.com",
+    "yourpassword",
+    "http://proxy:8080"
+)
+```
+
+<Note>
+The proxy URL should be in the format `http://proxy:port` or `https://proxy:port`.
+</Note>
+
+## API Reference
+
+### `GetJWTByLogin.login()`
+
+Static method to authenticate and return a JWT token.
+
+<ParamField path="email" type="string" required>
+  Your ipinfo.io account email address
+</ParamField>
+
+<ParamField path="password" type="string" required>
+  Your ipinfo.io account password
+</ParamField>
+
+<ParamField path="proxy_url" type="string" default="None">
+  Optional proxy URL in format `http://proxy:port`
+</ParamField>
+
+**Returns:** `str` - JWT token on success, `None` on failure
+
+### `GetJWTByLogin(email, password, proxy_url=None)`
+
+Class constructor for authentication.
+
+**Properties:**
+- `token` (str) - The JWT token if authentication succeeded
+- `error` (str) - Error message if authentication failed
+
+## Error Handling
+
+Always check if authentication was successful before using the token:
+
+```python error_handling.py icon="python" lines
+from ipinfaux import GetJWTByLogin
+
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+if jwt is None:
+    print("Authentication failed. Check your credentials.")
+    exit(1)
+
+# Use the token for lookups
+from ipinfaux import GetFullData
+data = GetFullData("8.8.8.8", jwt)
+```
+
+## Token Reuse
+
+Once you have a valid JWT token, you can reuse it for multiple IP lookups:
+
+```python token_reuse.py icon="python" lines
+from ipinfaux import GetJWTByLogin, GetFullData
+
+# Authenticate once
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+# Reuse token for multiple lookups
+ip_list = ["8.8.8.8", "1.1.1.1", "9.9.9.9"]
+
+for ip in ip_list:
+    data = GetFullData(ip, jwt)
+    if not data.error:
+        print(f"{ip}: {data.geolocation.get('city')}")
+```
+
+<Tip>
+Store the JWT token securely and reuse it for multiple requests to avoid repeated authentication.
+</Tip>
+
+## Fresh Token Retrieval
+
+The library includes a fallback method to retrieve a fresh token from Firebase:
+
+```python fresh_token.py icon="python" lines
+from ipinfaux import GetJWTByLogin
+
+# Attempt to get a fresh token from Firebase
+fresh_jwt = GetJWTByLogin.get_fresh_token()
+
+if fresh_jwt:
+    print("Retrieved fresh token")
+else:
+    print("Could not retrieve fresh token")
+```
+
+<Warning>
+The `get_fresh_token()` method is primarily used internally when authentication fails. For normal use, always use `login()` with your credentials.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Lookup IP Addresses" icon="magnifying-glass" href="/guides/lookup-ip">
+    Learn how to perform IP lookups with your JWT token
+  </Card>
+  <Card title="GetJWTByLogin API" icon="code" href="/api-reference/getjwtbylogin">
+    View the complete API reference
+  </Card>
+</CardGroup>

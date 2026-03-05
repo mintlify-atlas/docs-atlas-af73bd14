@@ -1,0 +1,309 @@
+---
+title: FAQ
+description: Frequently asked questions about ipinfaux
+---
+
+<AccordionGroup>
+  <Accordion title="How do I get ipinfo.io credentials?">
+    You need to create a free account on [ipinfo.io](https://ipinfo.io) to get credentials:
+
+    1. Go to [ipinfo.io/signup](https://ipinfo.io/signup)
+    2. Create an account with your email and password
+    3. Use these credentials with ipinfaux:
+
+    ```python
+    from ipinfaux import GetJWTByLogin
+
+    jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+    ```
+
+    The library will automatically obtain a JWT token by logging in with your credentials.
+
+    <Note>
+      You don't need a paid account - a free ipinfo.io account works with ipinfaux.
+    </Note>
+  </Accordion>
+
+  <Accordion title="What data does ipinfaux extract?">
+    ipinfaux extracts comprehensive IP information by scraping the ipinfo.io website:
+
+    - **Summary**: ASN, hostname, company, IP range, RPKI status, privacy indicators
+    - **Geolocation**: City, state, country, postal code, timezone, coordinates
+    - **Privacy Detection**: VPN, proxy, Tor, hosting, relay detection
+    - **ASN Details**: ASN number, name, domain, type
+    - **Abuse Contact**: Email, phone, address, network information
+    - **Hosted Domains**: List of domains hosted on the IP
+    - **Tags**: Service characteristics (CDN, hosting, webserver, etc.)
+    - **Other Providers**: Alternative geolocation data when available
+
+    See the [Data Structure](/data-structure) page for complete field documentation.
+  </Accordion>
+
+  <Accordion title="Can I use this without authentication?">
+    No, authentication is required. ipinfo.io requires a login to access detailed IP information.
+
+    However, the authentication process is simple:
+
+    ```python
+    from ipinfaux import GetJWTByLogin, GetFullData
+
+    # Authenticate once
+    jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+    # Reuse the JWT for multiple lookups
+    data1 = GetFullData("8.8.8.8", jwt)
+    data2 = GetFullData("1.1.1.1", jwt)
+    ```
+
+    <Note>
+      The JWT token can be reused for multiple lookups within the same session, so you only need to authenticate once.
+    </Note>
+  </Accordion>
+
+  <Accordion title="How accurate is the data?">
+    The data accuracy depends on ipinfo.io's database, which is generally considered highly accurate for:
+
+    - ASN and network information (very accurate)
+    - Hosting/VPN/proxy detection (very accurate)
+    - Country-level geolocation (95%+ accurate)
+    - City-level geolocation (75-85% accurate)
+
+    ipinfaux extracts data exactly as displayed on ipinfo.io, including the "Other Providers" section that shows when alternative geolocation databases (like MaxMind) disagree with ipinfo's data.
+
+    ```python
+    data = GetFullData("8.8.8.8", jwt)
+    
+    # Check if other providers have different data
+    if data.other_providers['exists']:
+        print(f"Alternative location: {data.other_providers['city']}")
+        print(f"Distance: {data.other_providers['distance_km']} km")
+    ```
+  </Accordion>
+
+  <Accordion title="What are the rate limits?">
+    ipinfaux doesn't impose its own rate limits, but you're subject to ipinfo.io's rate limits based on your account:
+
+    - **Free accounts**: Typically limited to a certain number of requests per day
+    - **Paid accounts**: Higher limits based on your plan
+
+    To avoid issues:
+
+    ```python
+    import time
+    from ipinfaux import GetFullData
+
+    for ip in ip_list:
+        data = GetFullData(ip, jwt)
+        # Add delay between requests
+        time.sleep(0.5)  # 500ms delay
+    ```
+
+    <Note>
+      If you encounter rate limiting, consider adding delays between requests or upgrading your ipinfo.io account.
+    </Note>
+  </Accordion>
+
+  <Accordion title="How do I handle proxy errors?">
+    If you're experiencing connection issues, you can configure a proxy for both authentication and lookups:
+
+    **Authentication with proxy:**
+    ```python
+    from ipinfaux import GetJWTByLogin
+
+    jwt = GetJWTByLogin.login(
+        "your@email.com",
+        "yourpassword",
+        "http://proxy:8080"  # Your proxy URL
+    )
+    ```
+
+    **Common proxy issues:**
+    - Ensure your proxy supports HTTPS
+    - Check proxy authentication if required
+    - Verify the proxy URL format: `http://proxy:port` or `https://proxy:port`
+    - For authenticated proxies: `http://user:pass@proxy:port`
+
+    If you encounter errors, check the `error` attribute:
+    ```python
+    data = GetFullData("8.8.8.8", jwt)
+    if data.error:
+        print(f"Error occurred: {data.error}")
+    ```
+  </Accordion>
+
+  <Accordion title="What Python versions are supported?">
+    ipinfaux requires **Python 3.7 or higher**.
+
+    **Dependencies:**
+    - `requests` - for HTTP requests
+    - `beautifulsoup4` - for HTML parsing
+
+    These are automatically installed when you install ipinfaux:
+
+    ```bash
+    pip install ipinfaux
+    ```
+
+    The library has been tested on:
+    - Python 3.7
+    - Python 3.8
+    - Python 3.9
+    - Python 3.10
+    - Python 3.11
+    - Python 3.12
+  </Accordion>
+
+  <Accordion title="Is this an official ipinfo.io library?">
+    **No**, ipinfaux is an **unofficial** library. It works by:
+
+    1. Logging into ipinfo.io with your credentials
+    2. Scraping the web interface for IP data
+    3. Parsing and structuring the information
+
+    **Important considerations:**
+    - This library may break if ipinfo.io changes their website structure
+    - Use the [official ipinfo Python client](https://github.com/ipinfo/python) for production applications with an API token
+    - ipinfaux is useful for research, testing, or when you only have login credentials
+
+    <Note>
+      If you have an API token, consider using the official library instead. ipinfaux is best for scenarios where you only have email/password credentials.
+    </Note>
+  </Accordion>
+
+  <Accordion title="What's the difference between summary and geolocation?">
+    These are two separate data sections with different types of information:
+
+    **Summary** - Network and organization information:
+    ```python
+    data.summary
+    # Returns: ASN, hostname, company, IP range, etc.
+    {
+        "asn": "AS15169",
+        "asn_name": "Google LLC",
+        "hostname": "dns.google",
+        "company": "Google LLC",
+        "range": "8.8.8.0/24",
+        "asn_type": "hosting"
+    }
+    ```
+
+    **Geolocation** - Physical location information:
+    ```python
+    data.geolocation
+    # Returns: City, country, coordinates, timezone, etc.
+    {
+        "city": "Mountain View",
+        "state": "California",
+        "country": "United States",
+        "country_code": "us",
+        "latitude": 37.4056,
+        "longitude": -122.0775,
+        "timezone": "America/Los_Angeles"
+    }
+    ```
+
+    Use `summary` for network ownership details and `geolocation` for physical location data.
+  </Accordion>
+
+  <Accordion title="How do I save data to files?">
+    ipinfaux provides multiple methods for saving data:
+
+    **JSON format:**
+    ```python
+    data = GetFullData("8.8.8.8", jwt)
+    
+    # Save with default filename (ipinfo_8.8.8.8.json)
+    data.save()
+    
+    # Save with custom filename
+    data.save("my_data.json")
+    ```
+
+    **CSV format:**
+    ```python
+    # Save single IP to CSV
+    data.save_csv("output.csv")
+    
+    # Batch save multiple IPs
+    results = [GetFullData(ip, jwt) for ip in ip_list]
+    results[0].save_csv_batch(results, "all_ips.csv")
+    ```
+
+    **Print to stdout:**
+    ```python
+    # Print as JSON
+    print(data.as_json())
+    
+    # Print as CSV
+    print(data.as_csv())
+    ```
+
+    All save methods return the filename on success or `None` on error.
+  </Accordion>
+
+  <Accordion title="Can I lookup multiple IPs efficiently?">
+    Yes, you can batch process IPs and save them together:
+
+    ```python
+    from ipinfaux import GetFullData
+
+    # Lookup multiple IPs
+    ips = ["8.8.8.8", "1.1.1.1", "9.9.9.9"]
+    results = []
+
+    for ip in ips:
+        data = GetFullData(ip, jwt)
+        if not data.error:
+            results.append(data)
+
+    # Save all to single CSV file
+    if results:
+        results[0].save_csv_batch(results, "all_results.csv")
+    ```
+
+    **Tips for efficient batch processing:**
+    - Reuse the same JWT token for all lookups
+    - Add small delays between requests to respect rate limits
+    - Filter out errors before saving results
+    - Use `save_csv_batch()` instead of individual CSV files
+
+    ```python
+    import time
+
+    for ip in large_ip_list:
+        data = GetFullData(ip, jwt)
+        if not data.error:
+            results.append(data)
+        time.sleep(0.5)  # Be respectful with rate limiting
+    ```
+  </Accordion>
+
+  <Accordion title="What happens if my JWT token expires?">
+    The library includes automatic token refresh functionality:
+
+    From `lookup.py:76-79`:
+    ```python
+    # check if we got a login page
+    if 'signup' in response.text.lower() or 'login' in response.text.lower():
+        fresh_token = GetJWTByLogin.get_fresh_token()
+        if fresh_token:
+            session.cookies.set('jwt-express', fresh_token)
+    ```
+
+    If your token expires:
+    1. The library detects the login page
+    2. Attempts to get a fresh token automatically
+    3. Retries the request
+
+    However, if you encounter authentication errors, simply re-authenticate:
+
+    ```python
+    # If token expires, get a new one
+    jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+    ```
+
+    <Note>
+      JWT tokens are typically valid for several hours. For long-running scripts, consider re-authenticating periodically.
+    </Note>
+  </Accordion>
+</AccordionGroup>

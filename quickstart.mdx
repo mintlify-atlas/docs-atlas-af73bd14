@@ -1,80 +1,364 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get started with ipinfaux in under 5 minutes
 ---
 
-## Get started in three steps
+## Get Started in 4 Steps
 
-Get your documentation site running locally and make your first customization.
+This guide will walk you through authenticating with ipinfo.io and performing your first IP lookup.
 
-### Step 1: Set up your local environment
+<Steps>
+  <Step title="Install ipinfaux">
+    If you haven't already, install ipinfaux using pip:
+
+    ```bash
+    pip install ipinfaux
+    ```
+
+    See the [Installation Guide](/installation) for more details.
+  </Step>
+
+  <Step title="Get JWT Token (Authentication)">
+    Before looking up IP addresses, you need to authenticate with ipinfo.io to obtain a JWT token.
+
+    <CodeGroup>
+    ```python Basic Login
+    from ipinfaux import GetJWTByLogin
+
+    # Login with your ipinfo.io credentials
+    jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+    if jwt:
+        print("Login successful!")
+    else:
+        print("Login failed")
+    ```
+
+    ```python With Proxy
+    from ipinfaux import GetJWTByLogin
+
+    # Login through a proxy
+    jwt = GetJWTByLogin.login(
+        "your@email.com",
+        "yourpassword",
+        "http://proxy:8080"
+    )
+    ```
+    </CodeGroup>
+
+    <Warning>
+      You need valid ipinfo.io account credentials. Sign up at [ipinfo.io](https://ipinfo.io) if you don't have an account.
+    </Warning>
+  </Step>
+
+  <Step title="Lookup an IP Address">
+    Once you have a JWT token, use it to look up any IP address:
+
+    ```python
+    from ipinfaux import GetFullData
+
+    # Lookup Google's DNS server
+    data = GetFullData("8.8.8.8", jwt)
+
+    # Check if the lookup was successful
+    if data.error:
+        print(f"Error: {data.error}")
+    else:
+        print("Lookup successful!")
+    ```
+
+    The `GetFullData` class automatically fetches and parses all available information about the IP address.
+  </Step>
+
+  <Step title="Access the Data">
+    The data is organized into structured attributes that you can easily access:
+
+    ```python
+    # Access different data categories
+    print(f"IP: {data.ip}")
+    print(f"\nSummary: {data.summary}")
+    print(f"\nGeolocation: {data.geolocation}")
+    print(f"\nPrivacy Detection: {data.privacy}")
+    print(f"\nASN Details: {data.asn}")
+    print(f"\nAbuse Contact: {data.abuse}")
+    ```
+
+    <Tip>
+      Each attribute returns a dictionary with structured data. Use `.get()` to safely access nested values.
+    </Tip>
+  </Step>
+</Steps>
+
+## Complete Working Example
+
+Here's a complete script that demonstrates the full workflow:
+
+```python title="example.py" icon="python"
+from ipinfaux import GetJWTByLogin, GetFullData
+
+# Step 1: Authenticate
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+if not jwt:
+    print("Failed to login")
+    exit(1)
+
+# Step 2: Lookup an IP
+data = GetFullData("8.8.8.8", jwt)
+
+# Step 3: Check for errors
+if data.error:
+    print(f"Lookup failed: {data.error}")
+    exit(1)
+
+# Step 4: Access and display data
+print(f"IP Address: {data.ip}")
+print(f"\nLocation:")
+print(f"  City: {data.geolocation.get('city')}")
+print(f"  State: {data.geolocation.get('state')}")
+print(f"  Country: {data.geolocation.get('country')}")
+
+print(f"\nCompany: {data.summary.get('company')}")
+print(f"Hostname: {data.summary.get('hostname')}")
+print(f"ASN: {data.summary.get('asn')}")
+
+print(f"\nPrivacy:")
+print(f"  Hosting: {data.privacy.get('hosting')}")
+print(f"  VPN: {data.privacy.get('vpn')}")
+print(f"  Proxy: {data.privacy.get('proxy')}")
+```
+
+### Expected Output
+
+```text
+IP Address: 8.8.8.8
+
+Location:
+  City: Mountain View
+  State: California
+  Country: United States
+
+Company: Google LLC
+Hostname: dns.google
+ASN: AS15169
+
+Privacy:
+  Hosting: True
+  VPN: False
+  Proxy: False
+```
+
+## Export Data
+
+ipinfaux provides built-in methods to export data in different formats.
+
+<CodeGroup>
+```python JSON Export
+from ipinfaux import GetFullData
+
+data = GetFullData("1.1.1.1", jwt)
+
+# Print as JSON
+print(data.as_json())
+
+# Save to default file (ipinfo_1.1.1.1.json)
+data.save()
+
+# Save to custom file
+data.save("cloudflare.json")
+```
+
+```python CSV Export
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+# Print as CSV
+print(data.as_csv())
+
+# Save to default file (ipinfo_8.8.8.8.csv)
+data.save_csv()
+
+# Save with custom delimiter
+data.save_csv("data.csv", delimiter=",")
+```
+</CodeGroup>
+
+## Process Multiple IPs
+
+Lookup multiple IP addresses and batch export to CSV:
+
+```python title="batch_lookup.py" icon="python" lines="1-5,10-12"
+from ipinfaux import GetJWTByLogin, GetFullData
+
+# Authenticate
+jwt = GetJWTByLogin.login("your@email.com", "password")
+
+# List of IPs to lookup
+ips = ["8.8.8.8", "1.1.1.1", "9.9.9.9"]
+results = []
+
+# Process each IP
+for ip in ips:
+    data = GetFullData(ip, jwt)
+    if not data.error:
+        results.append(data)
+        print(f"{ip}: {data.geolocation.get('city')}")
+
+# Export all results to a single CSV file
+if results:
+    results[0].save_csv_batch(results, "all_ips.csv")
+    print(f"\nExported {len(results)} results to all_ips.csv")
+```
+
+## Understanding the Data Structure
+
+Each IP lookup returns data organized into 8 categories:
 
 <AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
+  <Accordion title="summary - Basic IP Information">
+    ```json
+    {
+      "asn": "AS15169",
+      "rpki": true,
+      "asn_name": "Google LLC",
+      "hostname": "dns.google",
+      "range": "8.8.8.0/24",
+      "company": "Google LLC",
+      "hosted_domains_count": 20572,
+      "privacy": true,
+      "anycast": true,
+      "asn_type": "hosting",
+      "abuse_email": "network-abuse@google.com"
+    }
+    ```
   </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
+
+  <Accordion title="geolocation - Location Data">
+    ```json
+    {
+      "city": "Mountain View",
+      "state": "California",
+      "country": "United States",
+      "country_code": "us",
+      "postal": "94043",
+      "timezone": "America/Los_Angeles",
+      "latitude": 37.4056,
+      "longitude": -122.0775
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="privacy - Detection Flags">
+    ```json
+    {
+      "hosting": true,
+      "vpn": false,
+      "proxy": false,
+      "tor": false,
+      "relay": false,
+      "residential_proxy": false,
+      "details": {}
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="asn - Autonomous System">
+    ```json
+    {
+      "asn": "15169",
+      "asn_name": "Google LLC",
+      "domain": "google.com",
+      "asn_type": "hosting"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="abuse - Contact Information">
+    ```json
+    {
+      "address": "Mountain View, 1600 Amphitheatre Parkway, 94043",
+      "phone": "+1-650-253-0000",
+      "email": "network-abuse@google.com",
+      "name": "Abuse",
+      "network": "8.8.8.0/24"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="domains - Hosted Domains">
+    ```json
+    {
+      "count": 15,
+      "domains": [
+        "hdchina.org",
+        "55188.com",
+        "ymck.me",
+        "..."
+      ]
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="tags - IP Characteristics">
+    ```json
+    {
+      "anycast": true,
+      "cdn": true,
+      "hosting": true,
+      "webserver": true,
+      "vpn": false,
+      "proxy": false,
+      "tor": false,
+      "...": false
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="other_providers - Alternative Data">
+    ```json
+    {
+      "exists": false,
+      "city": null,
+      "state": null,
+      "country_code": null,
+      "distance_km": null,
+      "distance_text": null,
+      "full_text": null
+    }
+    ```
+
+    This field is populated when ipinfo.io detects discrepancies with other geolocation providers like MaxMind.
   </Accordion>
 </AccordionGroup>
 
-### Step 2: Deploy your changes
+## Error Handling
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+Always check for errors before accessing data:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+```python
+data = GetFullData("8.8.8.8", jwt)
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+if data.error:
+    print(f"Error occurred: {data.error}")
+    # Handle the error appropriately
+else:
+    # Safe to access data
+    print(data.summary)
+```
 
-### Step 3: Go live
+Common error scenarios:
+- **Invalid JWT token**: Authentication failed or token expired
+- **Network errors**: Connection timeout or DNS resolution failure
+- **Parsing errors**: HTML structure changed (rare)
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
+## Next Steps
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="API Reference" icon="code" href="/api-reference/getfulldata">
+    Explore the complete API documentation with all methods and parameters
+  </Card>
+  <Card title="Examples" icon="lightbulb" href="/examples">
+    View more advanced examples and use cases
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

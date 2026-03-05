@@ -1,0 +1,164 @@
+---
+title: Installation
+description: Install ipinfaux and set up your Python environment
+---
+
+## Install with pip
+
+The easiest way to install ipinfaux is using pip, Python's package manager.
+
+<Steps>
+  <Step title="Install ipinfaux">
+    Run the following command in your terminal:
+
+    ```bash
+    pip install ipinfaux
+    ```
+
+    This will install ipinfaux and its dependencies:
+    - `requests` >= 2.28.0
+    - `beautifulsoup4` >= 4.12.0
+  </Step>
+
+  <Step title="Verify Installation">
+    Verify that ipinfaux is installed correctly by importing it in Python:
+
+    ```python
+    python -c "import ipinfaux; print(ipinfaux.__version__)"
+    ```
+
+    You should see the version number (e.g., `0.0.1`) printed to the console.
+  </Step>
+
+  <Step title="Test Import">
+    Open a Python interpreter and test importing the main classes:
+
+    ```python
+    from ipinfaux import GetJWTByLogin, GetFullData
+    print("Import successful!")
+    ```
+
+    If no errors appear, you're ready to use ipinfaux.
+  </Step>
+</Steps>
+
+## Requirements
+
+<Note>
+  ipinfaux requires **Python 3.7 or higher**. Check your Python version with:
+  ```bash
+  python --version
+  ```
+</Note>
+
+The library has minimal dependencies:
+
+| Package | Version | Purpose |
+|---------|---------|----------|
+| requests | >= 2.28.0 | HTTP requests and session management |
+| beautifulsoup4 | >= 4.12.0 | HTML parsing and data extraction |
+
+## Optional: Virtual Environment Setup
+
+It's recommended to use a virtual environment to isolate your project dependencies.
+
+<CodeGroup>
+```bash venv
+# Create virtual environment
+python -m venv venv
+
+# Activate (Linux/Mac)
+source venv/bin/activate
+
+# Activate (Windows)
+venv\Scripts\activate
+
+# Install ipinfaux
+pip install ipinfaux
+```
+
+```bash conda
+# Create conda environment
+conda create -n ipinfaux python=3.10
+
+# Activate environment
+conda activate ipinfaux
+
+# Install ipinfaux
+pip install ipinfaux
+```
+</CodeGroup>
+
+## Install from Source
+
+If you want to install the latest development version or contribute to the project:
+
+<Steps>
+  <Step title="Clone Repository">
+    ```bash
+    git clone https://github.com/knopplie/ipinfaux.git
+    cd ipinfaux
+    ```
+  </Step>
+
+  <Step title="Install in Development Mode">
+    ```bash
+    pip install -e .
+    ```
+
+    This installs the package in editable mode, allowing you to make changes to the source code.
+  </Step>
+
+  <Step title="Run Tests">
+    ```bash
+    pytest
+    ```
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="ImportError: No module named 'ipinfaux'">
+    Make sure you've installed ipinfaux in the correct Python environment:
+    
+    ```bash
+    pip show ipinfaux
+    ```
+    
+    If nothing appears, reinstall with:
+    ```bash
+    pip install --force-reinstall ipinfaux
+    ```
+  </Accordion>
+
+  <Accordion title="SSL Certificate Errors">
+    If you encounter SSL errors when logging in, ensure your system has up-to-date CA certificates:
+    
+    ```bash
+    pip install --upgrade certifi
+    ```
+  </Accordion>
+
+  <Accordion title="Proxy Configuration Issues">
+    If you're behind a corporate proxy, configure pip to use it:
+    
+    ```bash
+    pip install ipinfaux --proxy http://proxy:8080
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Upgrade ipinfaux
+
+To upgrade to the latest version:
+
+```bash
+pip install --upgrade ipinfaux
+```
+
+## Next Steps
+
+<Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+  Learn how to authenticate and perform your first IP lookup in under 5 minutes
+</Card>

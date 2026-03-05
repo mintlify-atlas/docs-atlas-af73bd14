@@ -1,0 +1,318 @@
+---
+title: "GetJWTByLogin"
+description: "Authentication class for obtaining JWT tokens from ipinfo.io"
+---
+
+## Overview
+
+The `GetJWTByLogin` class handles authentication with ipinfo.io and retrieves JWT tokens required for accessing IP data. It supports both class instantiation and static method usage, with optional proxy support.
+
+## Constructor
+
+```python
+GetJWTByLogin(email, password, proxy_url=None)
+```
+
+Initializes and automatically performs login to retrieve a JWT token.
+
+<ParamField path="email" type="str" required>
+  Email address for ipinfo.io account login
+</ParamField>
+
+<ParamField path="password" type="str" required>
+  Password for ipinfo.io account
+</ParamField>
+
+<ParamField path="proxy_url" type="str" optional>
+  Proxy URL to use for the request (e.g., `"http://proxy:8080"` or `"socks5://proxy:1080"`)
+</ParamField>
+
+### Example
+
+```python
+from ipinfaux import GetJWTByLogin
+
+# Without proxy
+jwt_obj = GetJWTByLogin("your@email.com", "yourpassword")
+
+# With proxy
+jwt_obj = GetJWTByLogin("your@email.com", "yourpassword", "http://proxy:8080")
+
+if jwt_obj.token:
+    print(f"Token: {jwt_obj.token}")
+else:
+    print(f"Error: {jwt_obj.error}")
+```
+
+## Properties
+
+### token
+
+**Type:** `str | None`
+
+The JWT token string if login was successful, otherwise `None`.
+
+```python
+jwt_obj = GetJWTByLogin("your@email.com", "password")
+
+if jwt_obj.token:
+    # Use token with GetFullData
+    from ipinfaux import GetFullData
+    data = GetFullData("8.8.8.8", jwt_obj.token)
+```
+
+### error
+
+**Type:** `str | None`
+
+Error message if login failed, otherwise `None`.
+
+```python
+jwt_obj = GetJWTByLogin("your@email.com", "password")
+
+if jwt_obj.error:
+    print(f"Login failed: {jwt_obj.error}")
+```
+
+## Static Methods
+
+### login(email, password, proxy_url=None)
+
+Performs login and returns the JWT token directly without creating a class instance.
+
+<ParamField path="email" type="str" required>
+  Email address for ipinfo.io account login
+</ParamField>
+
+<ParamField path="password" type="str" required>
+  Password for ipinfo.io account
+</ParamField>
+
+<ParamField path="proxy_url" type="str" optional>
+  Proxy URL to use for the request
+</ParamField>
+
+**Returns:** `str | None` - JWT token string if successful, `None` otherwise
+
+```python
+from ipinfaux import GetJWTByLogin
+
+# Simple usage (recommended)
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+if jwt:
+    print(f"Token obtained: {jwt[:20]}...")
+else:
+    print("Login failed")
+
+# With proxy
+jwt = GetJWTByLogin.login(
+    "your@email.com",
+    "yourpassword",
+    "http://proxy:8080"
+)
+```
+
+<Note>
+  The static `login()` method is the recommended approach for most use cases as it's more concise and returns the token directly.
+</Note>
+
+### get_fresh_token()
+
+Attempts to retrieve a fresh JWT token from a Firebase database endpoint. This is used internally as a fallback mechanism.
+
+**Returns:** `str | None` - JWT token if available, `None` otherwise
+
+```python
+from ipinfaux import GetJWTByLogin
+
+# Get a fresh token without login credentials
+jwt = GetJWTByLogin.get_fresh_token()
+
+if jwt:
+    print("Fresh token obtained")
+else:
+    print("No fresh token available")
+```
+
+<Note>
+  This method is primarily used internally by `GetFullData` when the provided JWT token has expired. It may not always return a valid token.
+</Note>
+
+## Usage Patterns
+
+### Pattern 1: Static Method (Recommended)
+
+The simplest approach using the static `login()` method:
+
+```python
+from ipinfaux import GetJWTByLogin, GetFullData
+
+# Get token
+jwt = GetJWTByLogin.login("your@email.com", "password")
+
+if jwt:
+    # Use token for lookups
+    data = GetFullData("8.8.8.8", jwt)
+    print(data.summary)
+else:
+    print("Authentication failed")
+```
+
+### Pattern 2: Class Instantiation
+
+Using the class constructor with property access:
+
+```python
+from ipinfaux import GetJWTByLogin, GetFullData
+
+# Create JWT object
+jwt_obj = GetJWTByLogin("your@email.com", "password")
+
+if jwt_obj.token:
+    # Use token for lookups
+    data = GetFullData("8.8.8.8", jwt_obj.token)
+    print(data.summary)
+else:
+    print(f"Failed: {jwt_obj.error}")
+```
+
+### Pattern 3: With Proxy
+
+Both methods support proxy configuration:
+
+```python
+from ipinfaux import GetJWTByLogin, GetFullData
+
+proxy = "http://proxy.example.com:8080"
+
+# Static method with proxy
+jwt = GetJWTByLogin.login("your@email.com", "password", proxy)
+
+# Or class instantiation with proxy
+jwt_obj = GetJWTByLogin("your@email.com", "password", proxy)
+
+if jwt:
+    data = GetFullData("8.8.8.8", jwt)
+    print(data.summary)
+```
+
+### Pattern 4: Token Reuse
+
+JWT tokens can be reused for multiple lookups:
+
+```python
+from ipinfaux import GetJWTByLogin, GetFullData
+
+# Get token once
+jwt = GetJWTByLogin.login("your@email.com", "password")
+
+if jwt:
+    # Reuse token for multiple IPs
+    ips = ["8.8.8.8", "1.1.1.1", "9.9.9.9"]
+    
+    for ip in ips:
+        data = GetFullData(ip, jwt)
+        if not data.error:
+            print(f"{ip}: {data.geolocation.get('city')}")
+```
+
+## Error Handling
+
+```python
+from ipinfaux import GetJWTByLogin
+
+# Using static method
+jwt = GetJWTByLogin.login("your@email.com", "password")
+
+if not jwt:
+    print("Login failed - check credentials and network connection")
+    # Handle authentication failure
+    exit(1)
+
+# Using class instantiation
+jwt_obj = GetJWTByLogin("your@email.com", "password")
+
+if jwt_obj.error:
+    print(f"Authentication error: {jwt_obj.error}")
+    # Handle authentication failure
+    exit(1)
+
+if not jwt_obj.token:
+    print("No token received")
+    exit(1)
+```
+
+## Complete Example
+
+```python
+from ipinfaux import GetJWTByLogin, GetFullData
+import sys
+
+def main():
+    # Authenticate
+    email = "your@email.com"
+    password = "yourpassword"
+    proxy = None  # or "http://proxy:8080"
+    
+    print("Authenticating...")
+    jwt = GetJWTByLogin.login(email, password, proxy)
+    
+    if not jwt:
+        print("Failed to obtain JWT token")
+        sys.exit(1)
+    
+    print("Authentication successful")
+    
+    # Lookup IPs
+    ips_to_check = [
+        "8.8.8.8",
+        "1.1.1.1",
+        "9.9.9.9"
+    ]
+    
+    results = []
+    
+    for ip in ips_to_check:
+        print(f"\nLooking up {ip}...")
+        data = GetFullData(ip, jwt)
+        
+        if data.error:
+            print(f"  Error: {data.error}")
+            continue
+        
+        results.append(data)
+        
+        # Display key information
+        print(f"  Company: {data.summary.get('company', 'N/A')}")
+        print(f"  Location: {data.geolocation.get('city', 'N/A')}, {data.geolocation.get('country', 'N/A')}")
+        print(f"  ASN: {data.asn.get('asn', 'N/A')}")
+        
+        # Check privacy flags
+        if data.privacy['vpn']:
+            print("  ⚠️  VPN detected")
+        if data.privacy['proxy']:
+            print("  ⚠️  Proxy detected")
+        if data.privacy['tor']:
+            print("  ⚠️  Tor detected")
+    
+    print(f"\nProcessed {len(results)} IPs successfully")
+
+if __name__ == "__main__":
+    main()
+```
+
+## String Representation
+
+The `GetJWTByLogin` class supports string conversion:
+
+```python
+jwt_obj = GetJWTByLogin("your@email.com", "password")
+
+# Convert to string (returns token or empty string)
+token_string = str(jwt_obj)
+
+# Representation
+print(repr(jwt_obj))
+# Output: GetJWTByLogin(token='eyJhbGciOi...')
+```

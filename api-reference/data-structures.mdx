@@ -1,0 +1,711 @@
+---
+title: "Data Structures"
+description: "Detailed reference for all data structures returned by GetFullData"
+---
+
+## Overview
+
+The `GetFullData` class returns structured data across eight main categories. Each category contains specific fields that provide comprehensive information about an IP address.
+
+## Complete Example
+
+Here's the complete data structure returned for IP address `8.8.8.8` (Google DNS):
+
+```json
+{
+  "ip": "8.8.8.8",
+  "summary": {
+    "asn": "AS15169",
+    "rpki": true,
+    "asn_name": "Google LLC",
+    "hostname": "dns.google",
+    "range": "8.8.8.0/24",
+    "company": "Google LLC",
+    "hosted_domains_count": 20572,
+    "privacy": true,
+    "anycast": true,
+    "asn_type": "hosting",
+    "abuse_email": "network-abuse@google.com"
+  },
+  "geolocation": {
+    "city": "Mountain View",
+    "state": "California",
+    "country": "United States",
+    "country_code": "us",
+    "postal": "94043",
+    "timezone": "America/Los_Angeles",
+    "latitude": 37.4056,
+    "longitude": -122.0775
+  },
+  "privacy": {
+    "hosting": true,
+    "vpn": false,
+    "proxy": false,
+    "tor": false,
+    "relay": false,
+    "residential_proxy": false,
+    "details": {}
+  },
+  "asn": {
+    "asn": "15169",
+    "asn_name": "Google LLC",
+    "domain": "google.com",
+    "asn_type": "hosting"
+  },
+  "abuse": {
+    "address": "Mountain View, 1600 Amphitheatre Parkway, 94043",
+    "phone": "+1-650-253-0000",
+    "email": "network-abuse@google.com",
+    "name": "Abuse",
+    "network": "8.8.8.0/24"
+  },
+  "domains": {
+    "count": 15,
+    "domains": [
+      "hdchina.org",
+      "55188.com",
+      "ymck.me",
+      "ymjump.com",
+      "musicool.cn",
+      "viewpointcloud.com",
+      "itempurl.com",
+      "authrock.com",
+      "gbwhatspro.com",
+      "epicloud.link",
+      "btempurl.com",
+      "mysapo.vn",
+      "everincloud.com",
+      "farglory-hotel.com.tw",
+      "raptorx.co"
+    ]
+  },
+  "tags": {
+    "airplane": false,
+    "airport": false,
+    "anycast": true,
+    "bittorrent": false,
+    "cdn": true,
+    "cloud": false,
+    "crawler": false,
+    "geodns": false,
+    "hosting": true,
+    "hotel": false,
+    "hotspot": false,
+    "ix": false,
+    "mailserver": false,
+    "mobile": false,
+    "nameserver": false,
+    "portscan": false,
+    "proxy": false,
+    "relay": false,
+    "router": false,
+    "satellite": false,
+    "ssh": false,
+    "tor": false,
+    "vpn": false,
+    "webserver": true,
+    "bus_station": false,
+    "conference_center": false,
+    "coworking_space": false,
+    "in_transit": false,
+    "library": false,
+    "sports_center": false,
+    "stadium": false,
+    "subway_station": false,
+    "train_station": false
+  },
+  "other_providers": {
+    "exists": false,
+    "city": null,
+    "state": null,
+    "country_code": null,
+    "distance_km": null,
+    "distance_text": null,
+    "full_text": null
+  }
+}
+```
+
+## Data Categories
+
+### summary
+
+Basic IP information including ASN, hostname, company, and high-level characteristics.
+
+<Expandable title="All Summary Fields">
+  <ResponseField name="asn" type="string">
+    Autonomous System Number in format "AS12345"
+  </ResponseField>
+
+  <ResponseField name="rpki" type="boolean">
+    Whether RPKI (Resource Public Key Infrastructure) is enabled for this ASN
+  </ResponseField>
+
+  <ResponseField name="asn_name" type="string">
+    Name of the organization that owns the ASN
+  </ResponseField>
+
+  <ResponseField name="hostname" type="string">
+    Reverse DNS hostname for the IP address
+  </ResponseField>
+
+  <ResponseField name="range" type="string">
+    IP range in CIDR notation (e.g., "8.8.8.0/24")
+  </ResponseField>
+
+  <ResponseField name="company" type="string">
+    Company or organization that owns the IP
+  </ResponseField>
+
+  <ResponseField name="hosted_domains_count" type="integer">
+    Number of domains hosted on this IP address
+  </ResponseField>
+
+  <ResponseField name="privacy" type="boolean">
+    Whether any privacy service is detected (VPN, proxy, Tor, etc.)
+  </ResponseField>
+
+  <ResponseField name="anycast" type="boolean">
+    Whether this IP uses anycast routing
+  </ResponseField>
+
+  <ResponseField name="anycast_countries" type="integer" optional>
+    Number of countries where anycast nodes are present
+  </ResponseField>
+
+  <ResponseField name="anycast_cities" type="integer" optional>
+    Number of cities where anycast nodes are present
+  </ResponseField>
+
+  <ResponseField name="asn_type" type="string">
+    Type of ASN (e.g., "hosting", "isp", "education", "business")
+  </ResponseField>
+
+  <ResponseField name="abuse_email" type="string">
+    Email address for reporting abuse
+  </ResponseField>
+</Expandable>
+
+**Usage Example:**
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+print(f"Company: {data.summary['company']}")
+print(f"ASN: {data.summary['asn']} - {data.summary['asn_name']}")
+print(f"Hosted domains: {data.summary['hosted_domains_count']}")
+
+if data.summary.get('anycast'):
+    print(f"Anycast: {data.summary.get('anycast_countries')} countries")
+```
+
+### geolocation
+
+Geographic location data including city, state, country, coordinates, and timezone.
+
+<Expandable title="All Geolocation Fields">
+  <ResponseField name="city" type="string">
+    City name
+  </ResponseField>
+
+  <ResponseField name="state" type="string">
+    State or region name
+  </ResponseField>
+
+  <ResponseField name="country" type="string">
+    Full country name
+  </ResponseField>
+
+  <ResponseField name="country_code" type="string">
+    Two-letter ISO country code (e.g., "us", "uk", "fr")
+  </ResponseField>
+
+  <ResponseField name="postal" type="string">
+    Postal or ZIP code
+  </ResponseField>
+
+  <ResponseField name="timezone" type="string">
+    IANA timezone identifier (e.g., "America/Los_Angeles")
+  </ResponseField>
+
+  <ResponseField name="latitude" type="float">
+    Latitude coordinate (negative for South)
+  </ResponseField>
+
+  <ResponseField name="longitude" type="float">
+    Longitude coordinate (negative for West)
+  </ResponseField>
+</Expandable>
+
+**Usage Example:**
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+location = data.geolocation
+print(f"Location: {location['city']}, {location['state']}, {location['country']}")
+print(f"Coordinates: {location['latitude']}, {location['longitude']}")
+print(f"Timezone: {location['timezone']}")
+print(f"Postal: {location['postal']}")
+```
+
+### privacy
+
+Privacy detection results indicating if the IP is associated with VPN, proxy, Tor, hosting, or relay services.
+
+<Expandable title="All Privacy Fields">
+  <ResponseField name="hosting" type="boolean">
+    Whether the IP is from a hosting provider
+  </ResponseField>
+
+  <ResponseField name="vpn" type="boolean">
+    Whether the IP is associated with a VPN service
+  </ResponseField>
+
+  <ResponseField name="proxy" type="boolean">
+    Whether the IP is a proxy server
+  </ResponseField>
+
+  <ResponseField name="tor" type="boolean">
+    Whether the IP is a Tor exit node
+  </ResponseField>
+
+  <ResponseField name="relay" type="boolean">
+    Whether the IP is a relay service
+  </ResponseField>
+
+  <ResponseField name="residential_proxy" type="boolean">
+    Whether the IP is a residential proxy
+  </ResponseField>
+
+  <ResponseField name="details" type="object">
+    Additional details for detected privacy services
+    <Expandable title="Detail Fields (when available)">
+      <ResponseField name="provider" type="string">
+        Name of the VPN/proxy provider
+      </ResponseField>
+
+      <ResponseField name="last_seen" type="string">
+        When the IP was last seen associated with this service
+      </ResponseField>
+
+      <ResponseField name="activity_percent" type="integer">
+        Percentage of activity associated with this service
+      </ResponseField>
+    </Expandable>
+  </ResponseField>
+</Expandable>
+
+**Usage Example:**
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+privacy = data.privacy
+
+if privacy['vpn']:
+    print("VPN detected")
+    if 'vpn' in privacy['details']:
+        details = privacy['details']['vpn']
+        print(f"  Provider: {details.get('provider')}")
+        print(f"  Last seen: {details.get('last_seen')}")
+
+if privacy['tor']:
+    print("Tor exit node detected")
+
+if privacy['proxy']:
+    print("Proxy detected")
+
+if privacy['hosting']:
+    print("Hosting/datacenter IP")
+```
+
+### asn
+
+Autonomous System Number details including ASN, domain, type, and routing information.
+
+<Expandable title="All ASN Fields">
+  <ResponseField name="asn" type="string">
+    ASN number without "AS" prefix (e.g., "15169")
+  </ResponseField>
+
+  <ResponseField name="asn_name" type="string">
+    Name of the organization that owns the ASN
+  </ResponseField>
+
+  <ResponseField name="domain" type="string">
+    Primary domain associated with the ASN
+  </ResponseField>
+
+  <ResponseField name="asn_type" type="string">
+    Type of ASN (e.g., "hosting", "isp", "education", "business")
+  </ResponseField>
+
+  <ResponseField name="route" type="string">
+    Routing prefix in CIDR notation
+  </ResponseField>
+</Expandable>
+
+**Usage Example:**
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+asn_info = data.asn
+print(f"ASN: AS{asn_info['asn']} - {asn_info['asn_name']}")
+print(f"Domain: {asn_info['domain']}")
+print(f"Type: {asn_info['asn_type']}")
+print(f"Route: {asn_info['route']}")
+```
+
+### abuse
+
+Abuse contact information for reporting issues related to this IP address.
+
+<Expandable title="All Abuse Fields">
+  <ResponseField name="address" type="string">
+    Physical address of the abuse contact
+  </ResponseField>
+
+  <ResponseField name="phone" type="string">
+    Phone number for abuse contact
+  </ResponseField>
+
+  <ResponseField name="email" type="string">
+    Email address for reporting abuse
+  </ResponseField>
+
+  <ResponseField name="name" type="string">
+    Name of the abuse contact or department
+  </ResponseField>
+
+  <ResponseField name="network" type="string">
+    Network range in CIDR notation associated with this abuse contact
+  </ResponseField>
+</Expandable>
+
+**Usage Example:**
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+abuse_info = data.abuse
+if abuse_info:
+    print("Abuse Contact:")
+    print(f"  Name: {abuse_info.get('name')}")
+    print(f"  Email: {abuse_info.get('email')}")
+    print(f"  Phone: {abuse_info.get('phone')}")
+    print(f"  Address: {abuse_info.get('address')}")
+    print(f"  Network: {abuse_info.get('network')}")
+```
+
+### domains
+
+Domains hosted on this IP address.
+
+<Expandable title="All Domains Fields">
+  <ResponseField name="count" type="integer">
+    Number of domains hosted on this IP
+  </ResponseField>
+
+  <ResponseField name="domains" type="array">
+    List of domain names (strings)
+  </ResponseField>
+
+  <ResponseField name="restricted" type="boolean" optional>
+    Whether domain information is restricted (requires higher API tier)
+  </ResponseField>
+</Expandable>
+
+**Usage Example:**
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+domains_info = data.domains
+print(f"Hosted domains: {domains_info['count']}")
+
+if domains_info.get('restricted'):
+    print("Domain list is restricted - upgrade required")
+else:
+    print("Top domains:")
+    for domain in domains_info['domains'][:5]:
+        print(f"  - {domain}")
+```
+
+### tags
+
+Boolean flags indicating various characteristics and classifications of the IP address.
+
+<Expandable title="All Tag Fields">
+  <ResponseField name="airplane" type="boolean">
+    IP used on aircraft
+  </ResponseField>
+
+  <ResponseField name="airport" type="boolean">
+    IP located at an airport
+  </ResponseField>
+
+  <ResponseField name="anycast" type="boolean">
+    IP uses anycast routing
+  </ResponseField>
+
+  <ResponseField name="bittorrent" type="boolean">
+    IP associated with BitTorrent activity
+  </ResponseField>
+
+  <ResponseField name="cdn" type="boolean">
+    IP is part of a Content Delivery Network
+  </ResponseField>
+
+  <ResponseField name="cloud" type="boolean">
+    IP from a cloud provider
+  </ResponseField>
+
+  <ResponseField name="crawler" type="boolean">
+    IP used by web crawlers/bots
+  </ResponseField>
+
+  <ResponseField name="geodns" type="boolean">
+    IP used for geographic DNS routing
+  </ResponseField>
+
+  <ResponseField name="hosting" type="boolean">
+    IP from a hosting provider
+  </ResponseField>
+
+  <ResponseField name="hotel" type="boolean">
+    IP from a hotel network
+  </ResponseField>
+
+  <ResponseField name="hotspot" type="boolean">
+    IP from a public WiFi hotspot
+  </ResponseField>
+
+  <ResponseField name="ix" type="boolean">
+    IP at an Internet Exchange point
+  </ResponseField>
+
+  <ResponseField name="mailserver" type="boolean">
+    IP used for mail server
+  </ResponseField>
+
+  <ResponseField name="mobile" type="boolean">
+    IP from a mobile network
+  </ResponseField>
+
+  <ResponseField name="nameserver" type="boolean">
+    IP used for DNS nameserver
+  </ResponseField>
+
+  <ResponseField name="portscan" type="boolean">
+    IP associated with port scanning activity
+  </ResponseField>
+
+  <ResponseField name="proxy" type="boolean">
+    IP is a proxy server
+  </ResponseField>
+
+  <ResponseField name="relay" type="boolean">
+    IP is a relay service
+  </ResponseField>
+
+  <ResponseField name="router" type="boolean">
+    IP is a router
+  </ResponseField>
+
+  <ResponseField name="satellite" type="boolean">
+    IP from satellite internet connection
+  </ResponseField>
+
+  <ResponseField name="ssh" type="boolean">
+    IP associated with SSH activity
+  </ResponseField>
+
+  <ResponseField name="tor" type="boolean">
+    IP is a Tor exit node
+  </ResponseField>
+
+  <ResponseField name="vpn" type="boolean">
+    IP associated with VPN service
+  </ResponseField>
+
+  <ResponseField name="webserver" type="boolean">
+    IP used for web hosting
+  </ResponseField>
+
+  <ResponseField name="bus_station" type="boolean">
+    IP at a bus station
+  </ResponseField>
+
+  <ResponseField name="conference_center" type="boolean">
+    IP at a conference center
+  </ResponseField>
+
+  <ResponseField name="coworking_space" type="boolean">
+    IP at a coworking space
+  </ResponseField>
+
+  <ResponseField name="in_transit" type="boolean">
+    IP on public transportation
+  </ResponseField>
+
+  <ResponseField name="library" type="boolean">
+    IP at a library
+  </ResponseField>
+
+  <ResponseField name="sports_center" type="boolean">
+    IP at a sports facility
+  </ResponseField>
+
+  <ResponseField name="stadium" type="boolean">
+    IP at a stadium
+  </ResponseField>
+
+  <ResponseField name="subway_station" type="boolean">
+    IP at a subway/metro station
+  </ResponseField>
+
+  <ResponseField name="train_station" type="boolean">
+    IP at a train station
+  </ResponseField>
+</Expandable>
+
+**Usage Example:**
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+tags = data.tags
+
+# Get all active tags
+active_tags = [tag for tag, value in tags.items() if value]
+print(f"Active tags: {', '.join(active_tags)}")
+
+# Check specific tags
+if tags['cdn']:
+    print("This is a CDN IP")
+
+if tags['hosting']:
+    print("This is a hosting/datacenter IP")
+
+if tags['vpn'] or tags['proxy']:
+    print("Privacy service detected")
+```
+
+### other_providers
+
+Comparison data from other geolocation providers. This section only contains data when ipinfo.io detects that other providers (like MaxMind) report a different location.
+
+<Expandable title="All Other Providers Fields">
+  <ResponseField name="exists" type="boolean">
+    Whether other providers report a different location
+  </ResponseField>
+
+  <ResponseField name="city" type="string | null">
+    City reported by other providers
+  </ResponseField>
+
+  <ResponseField name="state" type="string | null">
+    State reported by other providers
+  </ResponseField>
+
+  <ResponseField name="country_code" type="string | null">
+    Two-letter country code reported by other providers
+  </ResponseField>
+
+  <ResponseField name="distance_km" type="float | null">
+    Distance in kilometers between ipinfo.io's location and other providers' location
+  </ResponseField>
+
+  <ResponseField name="distance_text" type="string | null">
+    Formatted distance string (e.g., "1,234.5")
+  </ResponseField>
+
+  <ResponseField name="full_text" type="string | null">
+    Complete text describing the discrepancy
+  </ResponseField>
+</Expandable>
+
+**Usage Example:**
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+other = data.other_providers
+
+if other['exists']:
+    print("Location discrepancy detected:")
+    print(f"  Other providers report: {other['city']}, {other['state']}, {other['country_code']}")
+    print(f"  Distance: {other['distance_km']} km")
+    print(f"  Details: {other['full_text']}")
+else:
+    print("All providers agree on location")
+```
+
+## Field Explanations
+
+Here's a summary of what each main category represents:
+
+- **summary**: Basic IP info (ASN, hostname, company) - the most commonly needed information
+- **geolocation**: Where the IP is physically located - useful for geo-targeting and localization
+- **privacy**: Whether the IP is a VPN/proxy/Tor - important for fraud detection and security
+- **asn**: Autonomous system details - useful for network analysis and routing information
+- **abuse**: Who to contact for abuse reports - required for handling complaints
+- **domains**: Domains hosted on this IP - useful for reputation and hosting analysis
+- **tags**: Classification flags - quick reference for IP characteristics
+- **other_providers**: Location accuracy comparison - shows when providers disagree (only applicable if ipinfo.io detects discrepancies)
+
+## Accessing Data
+
+You can access data in multiple ways:
+
+### Direct Property Access
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+# Access specific properties
+company = data.summary['company']
+city = data.geolocation['city']
+is_vpn = data.privacy['vpn']
+domain_count = data.domains['count']
+```
+
+### Complete Data Dictionary
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+# Get all data as dictionary
+all_data = data.as_dict()
+print(all_data['ip'])
+print(all_data['summary']['asn'])
+```
+
+### JSON Export
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+# Get as JSON string
+json_string = data.as_json(indent=2)
+print(json_string)
+
+# Save to file
+data.save("ip_data.json")
+```
+
+### CSV Export
+
+```python
+data = GetFullData("8.8.8.8", jwt)
+
+# Get as CSV (flattened with dot notation)
+csv_string = data.as_csv()
+print(csv_string)
+# Output: ip,summary.asn,summary.company,geolocation.city,...
+
+# Save to file
+data.save_csv("ip_data.csv")
+```

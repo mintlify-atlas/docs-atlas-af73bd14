@@ -1,0 +1,318 @@
+---
+title: Examples
+description: Real-world usage examples for ipinfaux
+---
+
+This page provides practical examples of how to use ipinfaux to lookup IP addresses and process the data.
+
+## Basic Usage
+
+<Tabs>
+  <Tab title="Get Data as JSON">
+    Retrieve IP information and work with it as JSON:
+
+    ```python
+    from ipinfaux import GetFullData
+
+    # Lookup an IP address
+    data = GetFullData("1.1.1.1", jwt)
+
+    # Print JSON output
+    print(data.as_json())
+
+    # Save to default file: ipinfo_1.1.1.1.json
+    data.save()
+
+    # Save to custom filename
+    data.save("custom.json")
+    ```
+
+    <Note>
+      The `as_json()` method returns a formatted JSON string with 2-space indentation by default.
+    </Note>
+  </Tab>
+
+  <Tab title="Get Data as CSV">
+    Export IP information to CSV format:
+
+    ```python
+    from ipinfaux import GetFullData
+
+    # Lookup an IP address
+    data = GetFullData("8.8.8.8", jwt)
+
+    # Print CSV output
+    print(data.as_csv())
+
+    # Save to default file: ipinfo_8.8.8.8.csv
+    data.save_csv()
+
+    # Save to custom filename with custom delimiter
+    data.save_csv("data.csv", delimiter=",")
+    ```
+
+    <Note>
+      CSV output flattens nested dictionaries using dot notation (e.g., `geolocation.city`).
+    </Note>
+  </Tab>
+</Tabs>
+
+## Processing Multiple IPs
+
+Batch process multiple IP addresses and aggregate the results:
+
+```python
+from ipinfaux import GetFullData
+
+# Define IP addresses to lookup
+ips = ["8.8.8.8", "1.1.1.1", "9.9.9.9"]
+results = []
+
+# Process each IP
+for ip in ips:
+    data = GetFullData(ip, jwt)
+    if not data.error:
+        results.append(data)
+        print(f"{ip}: {data.geolocation.get('city')}")
+
+# Save all results to a single CSV file
+if results:
+    results[0].save_csv_batch(results, "all_ips.csv")
+```
+
+**Example Output:**
+```
+8.8.8.8: Mountain View
+1.1.1.1: Los Angeles
+9.9.9.9: Berkeley
+```
+
+## Accessing Specific Data Fields
+
+<Tabs>
+  <Tab title="Geolocation Data">
+    Access location information for an IP:
+
+    ```python
+    from ipinfaux import GetFullData
+
+    data = GetFullData("8.8.8.8", jwt)
+
+    if not data.error:
+        geo = data.geolocation
+        print(f"City: {geo.get('city')}")
+        print(f"State: {geo.get('state')}")
+        print(f"Country: {geo.get('country')}")
+        print(f"Coordinates: {geo.get('latitude')}, {geo.get('longitude')}")
+        print(f"Timezone: {geo.get('timezone')}")
+    ```
+
+    **Output:**
+    ```
+    City: Mountain View
+    State: California
+    Country: United States
+    Coordinates: 37.4056, -122.0775
+    Timezone: America/Los_Angeles
+    ```
+  </Tab>
+
+  <Tab title="Privacy Detection">
+    Check if an IP is a VPN, proxy, or hosting service:
+
+    ```python
+    from ipinfaux import GetFullData
+
+    data = GetFullData("8.8.8.8", jwt)
+
+    if not data.error:
+        privacy = data.privacy
+        print(f"Hosting: {privacy['hosting']}")
+        print(f"VPN: {privacy['vpn']}")
+        print(f"Proxy: {privacy['proxy']}")
+        print(f"Tor: {privacy['tor']}")
+    ```
+
+    **Output:**
+    ```
+    Hosting: True
+    VPN: False
+    Proxy: False
+    Tor: False
+    ```
+  </Tab>
+
+  <Tab title="ASN Information">
+    Get autonomous system details:
+
+    ```python
+    from ipinfaux import GetFullData
+
+    data = GetFullData("8.8.8.8", jwt)
+
+    if not data.error:
+        summary = data.summary
+        print(f"ASN: {summary.get('asn')}")
+        print(f"ASN Name: {summary.get('asn_name')}")
+        print(f"Company: {summary.get('company')}")
+        print(f"ASN Type: {summary.get('asn_type')}")
+    ```
+
+    **Output:**
+    ```
+    ASN: AS15169
+    ASN Name: Google LLC
+    Company: Google LLC
+    ASN Type: hosting
+    ```
+  </Tab>
+
+  <Tab title="Abuse Contact">
+    Retrieve abuse contact information:
+
+    ```python
+    from ipinfaux import GetFullData
+
+    data = GetFullData("8.8.8.8", jwt)
+
+    if not data.error:
+        abuse = data.abuse
+        print(f"Email: {abuse.get('email')}")
+        print(f"Phone: {abuse.get('phone')}")
+        print(f"Address: {abuse.get('address')}")
+        print(f"Network: {abuse.get('network')}")
+    ```
+
+    **Output:**
+    ```
+    Email: network-abuse@google.com
+    Phone: +1-650-253-0000
+    Address: Mountain View, 1600 Amphitheatre Parkway, 94043
+    Network: 8.8.8.0/24
+    ```
+  </Tab>
+</Tabs>
+
+## Error Handling
+
+Always check for errors when looking up IP addresses:
+
+```python
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+# Check if lookup failed
+if data.error:
+    print(f"Failed: {data.error}")
+else:
+    # Process data safely
+    print(data.summary)
+    print(data.geolocation)
+    print(data.privacy)
+```
+
+<Note>
+  Common errors include network timeouts, invalid JWT tokens, or parsing failures. Always check `data.error` before accessing other fields.
+</Note>
+
+## Authentication with Proxy
+
+If you need to use a proxy for authentication:
+
+```python
+from ipinfaux import GetJWTByLogin
+
+# Login with proxy
+jwt = GetJWTByLogin.login(
+    "your@email.com",
+    "yourpassword",
+    "http://proxy:8080"
+)
+
+if jwt:
+    print("Login successful!")
+    # Use jwt for lookups
+else:
+    print("Login failed")
+```
+
+## Complete Workflow Example
+
+Here's a complete example that combines authentication and data processing:
+
+```python
+from ipinfaux import GetJWTByLogin, GetFullData
+import json
+
+# Step 1: Authenticate
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+if not jwt:
+    print("Authentication failed")
+    exit(1)
+
+# Step 2: Lookup IP addresses
+ips_to_check = ["8.8.8.8", "1.1.1.1", "9.9.9.9"]
+results = []
+
+for ip in ips_to_check:
+    print(f"Looking up {ip}...")
+    data = GetFullData(ip, jwt)
+    
+    if data.error:
+        print(f"  Error: {data.error}")
+        continue
+    
+    # Extract relevant information
+    info = {
+        "ip": ip,
+        "city": data.geolocation.get("city"),
+        "country": data.geolocation.get("country"),
+        "company": data.summary.get("company"),
+        "is_vpn": data.privacy["vpn"],
+        "is_hosting": data.privacy["hosting"]
+    }
+    results.append(info)
+    print(f"  Found: {info['city']}, {info['country']}")
+
+# Step 3: Save results
+with open("ip_report.json", "w") as f:
+    json.dump(results, f, indent=2)
+
+print(f"\nProcessed {len(results)} IPs successfully")
+```
+
+## Working with Tags
+
+Check what services or characteristics are associated with an IP:
+
+```python
+from ipinfaux import GetFullData
+
+data = GetFullData("8.8.8.8", jwt)
+
+if not data.error:
+    tags = data.tags
+    
+    # Find active tags
+    active_tags = [tag for tag, active in tags.items() if active]
+    
+    print(f"Active tags: {', '.join(active_tags)}")
+    
+    # Check specific tags
+    if tags['cdn']:
+        print("This IP is a CDN")
+    if tags['hosting']:
+        print("This IP is a hosting service")
+    if tags['anycast']:
+        print("This IP uses anycast")
+```
+
+**Example Output:**
+```
+Active tags: anycast, cdn, hosting, webserver
+This IP is a CDN
+This IP is a hosting service
+This IP uses anycast
+```

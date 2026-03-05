@@ -1,0 +1,289 @@
+---
+title: "Batch Processing"
+description: "Learn how to efficiently process multiple IP addresses"
+---
+
+## Overview
+
+When you need to look up information for multiple IP addresses, ipinfaux makes it easy to process them in batch and export the results to a single file.
+
+## Processing Multiple IPs
+
+Here's the basic pattern for batch processing:
+
+```python batch_basic.py icon="python" lines
+from ipinfaux import GetJWTByLogin, GetFullData
+
+# Authenticate once
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+if not jwt:
+    print("Authentication failed")
+    exit(1)
+
+# List of IPs to process
+ip_list = ["8.8.8.8", "1.1.1.1", "9.9.9.9"]
+results = []
+
+# Process each IP
+for ip in ip_list:
+    print(f"Looking up {ip}...")
+    data = GetFullData(ip, jwt)
+    
+    if not data.error:
+        results.append(data)
+        print(f"  {ip}: {data.geolocation.get('city')}")
+    else:
+        print(f"  {ip}: Error - {data.error}")
+
+print(f"\nSuccessfully processed {len(results)} IPs")
+```
+
+<Note>
+Authenticate once and reuse the JWT token for all lookups to avoid unnecessary authentication requests.
+</Note>
+
+## Batch Export to CSV
+
+Use the `save_csv_batch()` method to export multiple IP results to a single CSV file:
+
+```python batch_csv.py icon="python" lines
+from ipinfaux import GetJWTByLogin, GetFullData
+
+# Authenticate
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+# Process multiple IPs
+ips = ["8.8.8.8", "1.1.1.1", "9.9.9.9"]
+results = []
+
+for ip in ips:
+    data = GetFullData(ip, jwt)
+    if not data.error:
+        results.append(data)
+
+# Save all results to one CSV file
+if results:
+    # Use the first result's method to batch export all
+    filename = results[0].save_csv_batch(results, "all_ips.csv")
+    print(f"Saved {len(results)} IPs to {filename}")
+```
+
+<Tip>
+The `save_csv_batch()` method is called on the first result object and takes the full list of results as a parameter.
+</Tip>
+
+## Complete Batch Processing Example
+
+Here's a complete example with error handling and progress tracking:
+
+```python batch_complete.py icon="python" lines
+from ipinfaux import GetJWTByLogin, GetFullData
+import time
+
+def process_ip_batch(ip_list, jwt_token, output_file="batch_results.csv"):
+    """
+    Process a batch of IP addresses and save to CSV.
+    
+    Args:
+        ip_list: List of IP addresses to process
+        jwt_token: Authentication token
+        output_file: Output CSV filename
+    
+    Returns:
+        Tuple of (successful_results, failed_ips)
+    """
+    results = []
+    failed = []
+    
+    total = len(ip_list)
+    print(f"Processing {total} IP addresses...\n")
+    
+    for i, ip in enumerate(ip_list, 1):
+        print(f"[{i}/{total}] Looking up {ip}...", end=" ")
+        
+        try:
+            data = GetFullData(ip, jwt_token)
+            
+            if data.error:
+                print(f"Error: {data.error}")
+                failed.append((ip, data.error))
+            else:
+                results.append(data)
+                city = data.geolocation.get('city', 'Unknown')
+                company = data.summary.get('company', 'Unknown')
+                print(f"✓ {city} - {company}")
+            
+            # Small delay to avoid rate limiting
+            time.sleep(0.5)
+            
+        except Exception as e:
+            print(f"Exception: {e}")
+            failed.append((ip, str(e)))
+    
+    # Save results if any succeeded
+    if results:
+        filename = results[0].save_csv_batch(results, output_file)
+        print(f"\n✓ Saved {len(results)} results to {filename}")
+    else:
+        print("\n✗ No successful results to save")
+    
+    # Report failures
+    if failed:
+        print(f"\n✗ {len(failed)} failed lookups:")
+        for ip, error in failed:
+            print(f"  {ip}: {error}")
+    
+    return results, failed
+
+# Main execution
+if __name__ == "__main__":
+    # Authenticate
+    jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+    
+    if not jwt:
+        print("Authentication failed")
+        exit(1)
+    
+    # List of IPs to process
+    ip_addresses = [
+        "8.8.8.8",
+        "8.8.4.4",
+        "1.1.1.1",
+        "1.0.0.1",
+        "9.9.9.9",
+        "208.67.222.222"
+    ]
+    
+    # Process the batch
+    results, failed = process_ip_batch(ip_addresses, jwt, "dns_servers.csv")
+    
+    print(f"\nBatch processing complete:")
+    print(f"  Successful: {len(results)}")
+    print(f"  Failed: {len(failed)}")
+```
+
+## Reading IPs from File
+
+Process IPs from a text file (one IP per line):
+
+```python batch_from_file.py icon="python" lines
+from ipinfaux import GetJWTByLogin, GetFullData
+
+# Authenticate
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+# Read IPs from file
+with open("ip_list.txt", "r") as f:
+    ip_list = [line.strip() for line in f if line.strip()]
+
+print(f"Found {len(ip_list)} IPs in file")
+
+# Process each IP
+results = []
+for ip in ip_list:
+    data = GetFullData(ip, jwt)
+    if not data.error:
+        results.append(data)
+
+# Save to CSV
+if results:
+    results[0].save_csv_batch(results, "file_results.csv")
+    print(f"Saved {len(results)} results")
+```
+
+## Filtering and Analysis
+
+Filter batch results based on criteria:
+
+```python batch_filter.py icon="python" lines
+from ipinfaux import GetJWTByLogin, GetFullData
+
+jwt = GetJWTByLogin.login("your@email.com", "yourpassword")
+
+ips = ["8.8.8.8", "1.1.1.1", "9.9.9.9", "208.67.222.222"]
+results = []
+
+# Process IPs
+for ip in ips:
+    data = GetFullData(ip, jwt)
+    if not data.error:
+        results.append(data)
+
+# Filter for hosting IPs
+hosting_ips = [
+    data for data in results 
+    if data.privacy.get('hosting') == True
+]
+
+print(f"Found {len(hosting_ips)} hosting IPs out of {len(results)} total")
+
+# Filter for VPN IPs
+vpn_ips = [
+    data for data in results 
+    if data.privacy.get('vpn') == True
+]
+
+print(f"Found {len(vpn_ips)} VPN IPs")
+
+# Filter by country
+us_ips = [
+    data for data in results 
+    if data.geolocation.get('country_code') == 'us'
+]
+
+print(f"Found {len(us_ips)} US IPs")
+
+# Save filtered results
+if hosting_ips:
+    hosting_ips[0].save_csv_batch(hosting_ips, "hosting_ips.csv")
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Reuse JWT Token">
+    Authenticate once at the beginning and reuse the JWT token for all lookups. This reduces overhead and potential rate limiting.
+  </Accordion>
+  
+  <Accordion title="Add Delays">
+    Consider adding small delays (0.5-1 second) between requests to avoid rate limiting from ipinfo.io.
+  </Accordion>
+  
+  <Accordion title="Handle Errors Gracefully">
+    Always check the `error` property and collect failed IPs separately. Don't let one failure stop the entire batch.
+  </Accordion>
+  
+  <Accordion title="Progress Tracking">
+    For large batches, print progress updates so you know how far along the process is.
+  </Accordion>
+  
+  <Accordion title="Save Incrementally">
+    For very large batches (100+ IPs), consider saving results incrementally in case of interruption.
+  </Accordion>
+</AccordionGroup>
+
+## Performance Considerations
+
+- Each IP lookup requires an HTTP request to ipinfo.io
+- Expected time: ~1-2 seconds per IP (including network latency)
+- For 100 IPs with 0.5s delay: approximately 2-3 minutes
+- Memory usage is minimal (each result is ~5-10KB)
+
+<Warning>
+ipinfo.io may have rate limits on their website. If you're processing large batches (100+ IPs), consider adding longer delays or processing in smaller chunks.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Export Data" icon="download" href="/guides/export-data">
+    Learn more about export options and formats
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/guides/error-handling">
+    Handle errors and edge cases properly
+  </Card>
+  <Card title="Examples" icon="book" href="/examples">
+    View more batch processing examples
+  </Card>
+</CardGroup>
